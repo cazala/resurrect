@@ -1,0 +1,22 @@
+[profile.default]
+src = "src"
+test = "test"
+script = "script"
+out = "out"
+libs = []
+solc_version = "0.8.24"
+optimizer = true
+optimizer_runs = 20000
+bytecode_hash = "none"
+cbor_metadata = false
+
+[profile.ci]
+fuzz.runs = 10000
+invariant.runs = 512
+invariant.depth = 64
+
+[fmt]
+line_length = 100
+tab_width = 4
+bracket_spacing = true
+

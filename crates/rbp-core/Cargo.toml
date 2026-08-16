@@ -1,0 +1,27 @@
+[package]
+name = "rbp-core"
+description = "Protocol primitives and validation for Rebootable Bootstrap Protocol v1"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords = ["p2p", "ethereum", "bootstrap", "libp2p"]
+categories = ["network-programming", "cryptography"]
+
+[dependencies]
+alloy-primitives.workspace = true
+async-trait.workspace = true
+hex.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+rand.workspace = true
+tokio.workspace = true
+
+[lints]
+workspace = true
