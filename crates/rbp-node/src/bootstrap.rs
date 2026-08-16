@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use futures::{StreamExt, stream};
 use rbp_core::{Namespace, PeerCandidate};
+use serde::Serialize;
 use std::time::Duration;
 use thiserror::Error;
 
@@ -34,12 +35,18 @@ pub trait AnnouncementPublisher: Send + Sync {
     /// Whether this node is publicly reachable and configured to publish.
     fn eligible(&self) -> bool;
 
+    /// Whether a connected seed should refresh its normal announcement.
+    fn renewal_due(&self) -> bool {
+        false
+    }
+
     /// Publishes the node's newest signed record.
     async fn announce(&self, ttl: Duration) -> Result<(), BootstrapError>;
 }
 
 /// Observable bootstrap state-machine states.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum BootstrapState {
     /// State machine entry.
     Start,
@@ -62,7 +69,8 @@ pub enum BootstrapState {
 }
 
 /// One finite state-machine cycle result.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct BootstrapOutcome {
     /// Terminal state for this cycle.
     pub state: BootstrapState,

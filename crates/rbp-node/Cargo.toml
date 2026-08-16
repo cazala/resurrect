@@ -12,6 +12,7 @@ keywords = ["p2p", "ethereum", "libp2p", "bootstrap"]
 categories = ["network-programming", "command-line-utilities"]
 
 [dependencies]
+alloy.workspace = true
 anyhow.workspace = true
 async-trait.workspace = true
 clap.workspace = true

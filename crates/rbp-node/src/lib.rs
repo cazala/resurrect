@@ -8,6 +8,8 @@ mod bootstrap;
 mod cache;
 mod identity;
 mod p2p;
+mod registry;
+mod supervisor;
 
 pub use bootstrap::{
     AnnouncementPublisher, BootstrapController, BootstrapError, BootstrapOutcome, BootstrapPolicy,
@@ -16,3 +18,5 @@ pub use bootstrap::{
 pub use cache::{CacheError, SqlitePeerCache};
 pub use identity::{IdentityError, load_or_create_identity};
 pub use p2p::{HostConfig, HostError, HostStatus, Libp2pHost, Libp2pHostHandle, NativePeerSource};
+pub use registry::{RegistryAnnouncer, RegistryDiscovery, RegistryTelemetry, TelemetrySnapshot};
+pub use supervisor::{NodeStatus, Supervisor, SupervisorPolicy};
