@@ -13,6 +13,7 @@ pub struct EndpointPolicy {
 
 impl EndpointPolicy {
     /// Test/local-network policy that permits non-global IP addresses.
+    #[must_use]
     pub const fn local_testing() -> Self {
         Self {
             allow_non_global: true,
@@ -20,6 +21,7 @@ impl EndpointPolicy {
     }
 
     /// Returns whether a multiaddr is useful and safe in a dial context.
+    #[must_use]
     pub fn accepts(
         &self,
         address: &Multiaddr,

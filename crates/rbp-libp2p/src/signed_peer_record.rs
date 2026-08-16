@@ -61,6 +61,7 @@ impl Default for Libp2pPeerRecordCodec {
 
 impl Libp2pPeerRecordCodec {
     /// Creates a codec with explicit endpoint and count limits.
+    #[must_use]
     pub const fn new(policy: EndpointPolicy, max_endpoints: usize) -> Self {
         Self {
             policy,

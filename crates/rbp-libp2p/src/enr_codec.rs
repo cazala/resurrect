@@ -18,6 +18,7 @@ pub struct EnrCodec {
 
 impl EnrCodec {
     /// Creates an ENR codec with explicit endpoint policy.
+    #[must_use]
     pub const fn new(policy: EndpointPolicy) -> Self {
         Self { policy }
     }

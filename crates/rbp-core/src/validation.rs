@@ -54,6 +54,7 @@ pub struct CodecRegistry {
 
 impl CodecRegistry {
     /// Creates an empty, deny-by-default codec registry.
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
@@ -64,6 +65,7 @@ impl CodecRegistry {
     }
 
     /// Returns whether a codec has been explicitly registered.
+    #[must_use]
     pub fn contains(&self, record_type: u32) -> bool {
         self.codecs.contains_key(&record_type)
     }
@@ -203,6 +205,7 @@ pub struct CandidateStore {
 
 impl CandidateStore {
     /// Creates a store. A zero candidate cap is promoted to one.
+    #[must_use]
     pub fn new(mut config: CandidateStoreConfig) -> Self {
         config.max_candidates = config.max_candidates.max(1);
         Self {
@@ -212,16 +215,19 @@ impl CandidateStore {
     }
 
     /// Number of distinct retained identities.
+    #[must_use]
     pub fn len(&self) -> usize {
         self.candidates.len()
     }
 
     /// Whether no candidates are retained.
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.candidates.is_empty()
     }
 
     /// Returns the retained record for a codec-defined identity.
+    #[must_use]
     pub fn get(&self, record_type: u32, peer_id: &[u8]) -> Option<&PeerCandidate> {
         let mut key = Vec::with_capacity(4 + peer_id.len());
         key.extend_from_slice(&record_type.to_be_bytes());
@@ -265,6 +271,7 @@ impl CandidateStore {
     }
 
     /// Returns candidates in deterministic pseudo-random dial order.
+    #[must_use]
     pub fn ranked(&self) -> Vec<&PeerCandidate> {
         let mut entries: Vec<_> = self.candidates.iter().collect();
         entries.sort_by_key(|(identity, _)| self.score(identity));

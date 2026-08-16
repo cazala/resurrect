@@ -70,6 +70,7 @@ pub struct PeerCandidate {
 
 impl PeerCandidate {
     /// A stable composite identity key that avoids cross-codec collisions.
+    #[must_use]
     pub fn identity_key(&self) -> Vec<u8> {
         let mut key = Vec::with_capacity(4 + self.peer_id.len());
         key.extend_from_slice(&self.record_type.to_be_bytes());

@@ -11,22 +11,26 @@ impl Namespace {
     /// Derives the recommended namespace for an application protocol version.
     ///
     /// This is exactly `keccak256("rbp:" + application + ":" + major)`.
+    #[must_use]
     pub fn derive(application_identifier: &str, major_protocol_version: u64) -> Self {
         let input = format!("rbp:{application_identifier}:{major_protocol_version}");
         Self(keccak256(input.as_bytes()))
     }
 
     /// Constructs a namespace from raw bytes.
+    #[must_use]
     pub const fn from_bytes(bytes: [u8; 32]) -> Self {
         Self(B256::new(bytes))
     }
 
     /// Returns the raw namespace bytes.
+    #[must_use]
     pub fn as_bytes(&self) -> &[u8; 32] {
         self.0.as_ref()
     }
 
     /// Returns the Alloy fixed-byte representation.
+    #[must_use]
     pub const fn as_b256(self) -> B256 {
         self.0
     }
