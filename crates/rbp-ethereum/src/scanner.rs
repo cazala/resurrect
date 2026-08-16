@@ -26,6 +26,9 @@ pub struct ScannerConfig {
     pub max_endpoints_per_record: usize,
     /// Confirmations used if safe/finalized tags are unavailable.
     pub fallback_confirmations: u64,
+    /// Prefer safe/finalized tags when the provider exposes them.
+    /// Disable only for development chains without progressing finality.
+    pub use_finality_tags: bool,
     /// Client-environment endpoint profile.
     pub dial_context: DialContext,
 }
@@ -39,6 +42,7 @@ impl Default for ScannerConfig {
             max_candidates: rbp_core::DEFAULT_MAX_ACTIVE_CANDIDATES,
             max_endpoints_per_record: rbp_core::DEFAULT_MAX_ENDPOINTS_PER_RECORD,
             fallback_confirmations: 12,
+            use_finality_tags: true,
             dial_context: DialContext::NativeServer,
         }
     }
@@ -233,15 +237,17 @@ impl<'a, P: RegistryProvider + ?Sized> RegistryScanner<'a, P> {
     }
 
     async fn confirmed_head(&self) -> Result<BlockInfo, ScanError> {
-        match self.provider.block(BlockReference::Finalized).await {
-            Ok(Some(block)) => return Ok(block),
-            Ok(None) | Err(ProviderError::Unsupported(_)) => {}
-            Err(error) => return Err(error.into()),
-        }
-        match self.provider.block(BlockReference::Safe).await {
-            Ok(Some(block)) => return Ok(block),
-            Ok(None) | Err(ProviderError::Unsupported(_)) => {}
-            Err(error) => return Err(error.into()),
+        if self.config.use_finality_tags {
+            match self.provider.block(BlockReference::Finalized).await {
+                Ok(Some(block)) => return Ok(block),
+                Ok(None) | Err(ProviderError::Unsupported(_)) => {}
+                Err(error) => return Err(error.into()),
+            }
+            match self.provider.block(BlockReference::Safe).await {
+                Ok(Some(block)) => return Ok(block),
+                Ok(None) | Err(ProviderError::Unsupported(_)) => {}
+                Err(error) => return Err(error.into()),
+            }
         }
         let latest = self
             .provider
@@ -625,6 +631,28 @@ mod tests {
         .await
         .unwrap();
         assert_eq!(report.head.number, 88);
+    }
+
+    #[tokio::test]
+    async fn can_explicitly_use_confirmations_on_development_chains() {
+        let namespace = Namespace::derive("scanner", 1);
+        let provider = provider(Vec::new());
+        let codecs = codecs();
+        let report = RegistryScanner::new(
+            &provider,
+            &codecs,
+            ScannerConfig {
+                initial_chunk_size: 3,
+                minimum_chunk_size: 1,
+                fallback_confirmations: 2,
+                use_finality_tags: false,
+                ..ScannerConfig::default()
+            },
+        )
+        .scan(&descriptor(namespace), b"local", None)
+        .await
+        .unwrap();
+        assert_eq!(report.head.number, 98);
     }
 
     #[tokio::test]
