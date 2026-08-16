@@ -20,6 +20,7 @@ libp2p.workspace = true
 rbp-core = { version = "0.1.0", path = "../rbp-core" }
 rbp-ethereum = { version = "0.1.0", path = "../rbp-ethereum" }
 rbp-libp2p = { version = "0.1.0", path = "../rbp-libp2p" }
+rusqlite.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
@@ -32,4 +33,3 @@ tempfile = "3.23.0"
 
 [lints]
 workspace = true
-
