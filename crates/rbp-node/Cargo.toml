@@ -1,0 +1,35 @@
+[package]
+name = "rbp-node"
+description = "Native Tokio/rust-libp2p reference node for Rebootable Bootstrap Protocol v1"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords = ["p2p", "ethereum", "libp2p", "bootstrap"]
+categories = ["network-programming", "command-line-utilities"]
+
+[dependencies]
+anyhow.workspace = true
+async-trait.workspace = true
+clap.workspace = true
+futures.workspace = true
+libp2p.workspace = true
+rbp-core = { version = "0.1.0", path = "../rbp-core" }
+rbp-ethereum = { version = "0.1.0", path = "../rbp-ethereum" }
+rbp-libp2p = { version = "0.1.0", path = "../rbp-libp2p" }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio = { workspace = true, features = ["fs", "io-util", "net", "rt-multi-thread", "signal", "sync", "time"] }
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[dev-dependencies]
+tempfile = "3.23.0"
+
+[lints]
+workspace = true
+
