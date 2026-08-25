@@ -7,6 +7,11 @@ interface Vm {
     function prank(address sender) external;
     function warp(uint256 timestamp) external;
     function load(address target, bytes32 slot) external view returns (bytes32);
+    function envOr(string calldata name, string calldata defaultValue)
+        external
+        view
+        returns (string memory value);
+    function createSelectFork(string calldata rpcUrl) external returns (uint256 forkId);
 }
 
 abstract contract TestBase {
