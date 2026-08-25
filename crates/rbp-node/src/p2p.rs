@@ -223,9 +223,14 @@ impl PeerConnector for Libp2pHostHandle {
         {
             return false;
         }
-        tokio::time::timeout(timeout, receiver)
-            .await
-            .is_ok_and(|received| received.is_ok_and(|dial| dial.is_ok()))
+        if let Ok(dial_result) = tokio::time::timeout(timeout, receiver).await {
+            dial_result.is_ok_and(|dial| dial.is_ok())
+        } else {
+            // The receiver has been dropped by the timeout. Promptly prune its
+            // sender so a stalled transport cannot accumulate retry waiters.
+            let _ = self.commands.send(Command::PruneDialWaiters).await;
+            false
+        }
     }
 }
 
@@ -282,6 +287,7 @@ enum Command {
     },
     AddVerified(PeerCandidate),
     NativeCandidates(oneshot::Sender<Vec<PeerCandidate>>),
+    PruneDialWaiters,
     Shutdown(oneshot::Sender<()>),
 }
 
@@ -342,6 +348,12 @@ impl EventLoop {
             Command::NativeCandidates(sender) => {
                 let _ = sender.send(self.native_candidates());
             }
+            Command::PruneDialWaiters => {
+                self.pending.retain(|_, waiters| {
+                    waiters.retain(|waiter| !waiter.is_closed());
+                    !waiters.is_empty()
+                });
+            }
             Command::Shutdown(_) => unreachable!("shutdown is handled in the run loop"),
         }
     }
@@ -389,12 +401,15 @@ impl EventLoop {
             }
             SwarmEvent::ConnectionEstablished { peer_id, .. } => {
                 self.connected.insert(peer_id);
+                // Publish connectivity before completing dial waiters. The
+                // bootstrap controller reads this snapshot immediately after a
+                // successful dial to attribute the connection to its source.
+                self.publish_status();
                 if let Some(waiters) = self.pending.remove(&peer_id) {
                     for waiter in waiters {
                         let _ = waiter.send(Ok(()));
                     }
                 }
-                self.publish_status();
             }
             SwarmEvent::ConnectionClosed {
                 peer_id,
@@ -418,12 +433,7 @@ impl EventLoop {
             }
             SwarmEvent::Behaviour(BehaviourEvent::Mdns(mdns::Event::Discovered(peers))) => {
                 for (peer, address) in peers {
-                    self.native.entry(peer).or_default().insert(address.clone());
-                    if !self.connected.contains(&peer) {
-                        let _ = self
-                            .swarm
-                            .dial(DialOpts::peer_id(peer).addresses(vec![address]).build());
-                    }
+                    self.native.entry(peer).or_default().insert(address);
                 }
                 self.publish_status();
             }
