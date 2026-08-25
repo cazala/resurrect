@@ -5,7 +5,8 @@ use anyhow::{Context, Result, bail};
 use clap::{Parser, ValueEnum};
 use libp2p::Multiaddr;
 use rbp_core::{
-    CodecRegistry, DialContext, NetworkDescriptor, RECORD_TYPE_ENR, RECORD_TYPE_LIBP2P,
+    CodecRegistry, DEFAULT_MAX_ENDPOINTS_PER_RECORD, DialContext, NetworkDescriptor,
+    RECORD_TYPE_ENR, RECORD_TYPE_LIBP2P,
 };
 use rbp_ethereum::{AlloyRegistryProvider, RegistryProvider, ScannerConfig};
 use rbp_libp2p::{EndpointPolicy, EnrCodec, Libp2pPeerRecordCodec};
@@ -63,6 +64,10 @@ struct Cli {
     /// Enable mDNS as the native post-bootstrap discovery mechanism.
     #[arg(long, default_value_t = true, action = clap::ArgAction::Set)]
     mdns: bool,
+
+    /// Configured native peer multiaddr ending in `/p2p/<peer-id>`; repeatable.
+    #[arg(long)]
+    native_peer: Vec<String>,
 
     /// Permit private/loopback signed endpoints (testing/private overlays only).
     #[arg(long)]
@@ -135,6 +140,7 @@ async fn run(cli: Cli) -> Result<()> {
         .with_context(|| format!("could not read descriptor {}", cli.descriptor.display()))?;
     let descriptor = NetworkDescriptor::from_json(&descriptor_json)
         .context("network descriptor is not conforming RBP v1 JSON")?;
+    validate_cli_policy(&cli, descriptor.registry.max_ttl_seconds)?;
     let endpoint_policy = if cli.allow_private_endpoints {
         EndpointPolicy::local_testing()
     } else {
@@ -152,13 +158,6 @@ async fn run(cli: Cli) -> Result<()> {
         }
         None => Arc::new(AlloyRegistryProvider::read_only(&cli.rpc_url)?),
     };
-    let actual_chain = provider
-        .chain_id()
-        .await
-        .context("could not verify registry provider chain ID")?;
-    descriptor
-        .verify_chain_id(actual_chain)
-        .context("registry provider is connected to the wrong chain")?;
     if cli.seed && cli.ethereum_private_key.is_none() {
         bail!("--seed requires RBP_ETHEREUM_PRIVATE_KEY");
     }
@@ -167,11 +166,21 @@ async fn run(cli: Cli) -> Result<()> {
     }
 
     let listen_addresses = parse_multiaddrs(&cli.listen, "listen")?;
+    let configured_peers = parse_multiaddrs(&cli.native_peer, "native-peer")?;
     let advertised_addresses = parse_multiaddrs(&cli.advertise, "advertise")?;
+    if advertised_addresses.len() > DEFAULT_MAX_ENDPOINTS_PER_RECORD {
+        bail!("--advertise exceeds the signed peer-record endpoint cap");
+    }
+    for address in &advertised_addresses {
+        if !endpoint_policy.accepts(address, Some(peer_id), DialContext::NativeServer) {
+            bail!("advertised endpoint is rejected by the selected endpoint policy: {address}");
+        }
+    }
     let mut host = Libp2pHost::start(
         identity.clone(),
         HostConfig {
             listen_addresses,
+            configured_peers,
             enable_mdns: cli.mdns,
             ..HostConfig::default()
         },
@@ -254,6 +263,36 @@ async fn run(cli: Cli) -> Result<()> {
         })
         .await?;
     host.shutdown().await;
+    Ok(())
+}
+
+fn validate_cli_policy(cli: &Cli, maximum_ttl: u32) -> Result<()> {
+    if cli.minimum_peers == 0 {
+        bail!("--minimum-peers must be positive");
+    }
+    if cli.maximum_parallel_dials == 0 {
+        bail!("--maximum-parallel-dials must be positive");
+    }
+    if cli.dial_timeout_seconds == 0 {
+        bail!("--dial-timeout-seconds must be positive");
+    }
+    if cli.native_observation_millis == 0 {
+        bail!("--native-observation-millis must be positive");
+    }
+    if cli.initial_backoff_millis == 0 || cli.maximum_backoff_seconds == 0 {
+        bail!("retry backoff values must be positive");
+    }
+    if cli.renewal_interval_seconds == 0 {
+        bail!("--renewal-interval-seconds must be positive");
+    }
+    for (name, ttl) in [
+        ("--reboot-ttl-seconds", cli.reboot_ttl_seconds),
+        ("--maintenance-ttl-seconds", cli.maintenance_ttl_seconds),
+    ] {
+        if ttl == 0 || ttl > u64::from(maximum_ttl) {
+            bail!("{name} must be between 1 and the descriptor maximum TTL");
+        }
+    }
     Ok(())
 }
 

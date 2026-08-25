@@ -2,7 +2,9 @@ use crate::{BootstrapError, DiscoverySource, NativeDiscovery, PeerConnector};
 use async_trait::async_trait;
 use futures::StreamExt;
 use libp2p::{
-    Multiaddr, PeerId, SwarmBuilder, identify, mdns, noise, ping,
+    Multiaddr, PeerId, SwarmBuilder, identify, mdns,
+    multiaddr::Protocol,
+    noise, ping,
     swarm::{NetworkBehaviour, Swarm, SwarmEvent, behaviour::toggle::Toggle, dial_opts::DialOpts},
     tcp, yamux,
 };
@@ -20,6 +22,8 @@ use tokio::sync::{mpsc, oneshot, watch};
 pub struct HostConfig {
     /// Local listen multiaddrs.
     pub listen_addresses: Vec<Multiaddr>,
+    /// Statically configured native peers, each ending in `/p2p/<peer-id>`.
+    pub configured_peers: Vec<Multiaddr>,
     /// Enables local-network native discovery.
     pub enable_mdns: bool,
     /// Idle authenticated connection lifetime.
@@ -34,6 +38,7 @@ impl Default for HostConfig {
                     .parse()
                     .expect("static multiaddr is valid"),
             ],
+            configured_peers: Vec::new(),
             enable_mdns: true,
             idle_connection_timeout: Duration::from_secs(120),
         }
@@ -72,6 +77,11 @@ impl Libp2pHost {
         keypair: libp2p::identity::Keypair,
         config: HostConfig,
     ) -> Result<Self, HostError> {
+        let configured_peers = config
+            .configured_peers
+            .into_iter()
+            .map(split_configured_peer)
+            .collect::<Result<Vec<_>, _>>()?;
         let local_peer = keypair.public().to_peer_id();
         let mdns_enabled = config.enable_mdns;
         let mut swarm = SwarmBuilder::with_existing_identity(keypair)
@@ -126,7 +136,8 @@ impl Libp2pHost {
         };
         let (status_tx, status) = watch::channel(initial);
         let handle = Libp2pHostHandle { commands, status };
-        let task = tokio::spawn(EventLoop::new(swarm, command_rx, status_tx).run());
+        let task =
+            tokio::spawn(EventLoop::new(swarm, command_rx, status_tx, configured_peers).run());
         Ok(Self { handle, task })
     }
 
@@ -307,13 +318,18 @@ impl EventLoop {
         swarm: Swarm<Behaviour>,
         commands: mpsc::Receiver<Command>,
         status_tx: watch::Sender<HostStatus>,
+        configured_peers: Vec<(PeerId, Multiaddr)>,
     ) -> Self {
+        let mut native = HashMap::<PeerId, HashSet<Multiaddr>>::new();
+        for (peer_id, address) in configured_peers {
+            native.entry(peer_id).or_default().insert(address);
+        }
         Self {
             swarm,
             commands,
             status_tx,
             connected: HashSet::new(),
-            native: HashMap::new(),
+            native,
             verified: HashMap::new(),
             pending: HashMap::new(),
             listen_addresses: HashSet::new(),
@@ -503,6 +519,14 @@ impl EventLoop {
     }
 }
 
+fn split_configured_peer(mut address: Multiaddr) -> Result<(PeerId, Multiaddr), HostError> {
+    let original = address.clone();
+    match address.pop() {
+        Some(Protocol::P2p(peer_id)) if !address.is_empty() => Ok((peer_id, address)),
+        _ => Err(HostError::InvalidConfiguredPeer(original.to_string())),
+    }
+}
+
 /// Native host construction and command failures.
 #[derive(Clone, Debug, Error, PartialEq, Eq)]
 pub enum HostError {
@@ -512,6 +536,9 @@ pub enum HostError {
     /// No configured listener could be started.
     #[error("no libp2p listener could be started")]
     NoListener,
+    /// A configured native peer omitted its terminal authenticated peer ID.
+    #[error("configured peer must end in /p2p/<peer-id>: {0}")]
+    InvalidConfiguredPeer(String),
     /// Listener event did not arrive in time.
     #[error("timed out waiting for libp2p listener")]
     ListenTimeout,
@@ -540,6 +567,7 @@ mod tests {
     fn local_config() -> HostConfig {
         HostConfig {
             listen_addresses: vec!["/ip4/127.0.0.1/tcp/0".parse().unwrap()],
+            configured_peers: Vec::new(),
             enable_mdns: false,
             idle_connection_timeout: Duration::from_secs(30),
         }
@@ -587,5 +615,53 @@ mod tests {
 
         host_b.shutdown().await;
         host_a.shutdown().await;
+    }
+
+    #[tokio::test]
+    async fn configured_peer_is_a_native_candidate() {
+        let key_a = Keypair::generate_ed25519();
+        let peer_a = key_a.public().to_peer_id();
+        let mut host_a = Libp2pHost::start(key_a, local_config()).unwrap();
+        let status_a = host_a
+            .handle
+            .wait_for_listener(Duration::from_secs(5))
+            .await
+            .unwrap();
+
+        let mut config_b = local_config();
+        config_b.configured_peers.push(
+            status_a.listen_addresses[0]
+                .parse::<Multiaddr>()
+                .unwrap()
+                .with(Protocol::P2p(peer_a)),
+        );
+        let key_b = Keypair::generate_ed25519();
+        let mut host_b = Libp2pHost::start(key_b, config_b).unwrap();
+        host_b
+            .handle
+            .wait_for_listener(Duration::from_secs(5))
+            .await
+            .unwrap();
+
+        let candidates = host_b.handle.native_candidates().await.unwrap();
+        assert_eq!(candidates.len(), 1);
+        assert_eq!(candidates[0].peer_id, peer_a.to_bytes());
+        assert_eq!(candidates[0].source, DiscoverySourceKind::Native);
+        assert!(
+            host_b
+                .handle
+                .connect(candidates[0].clone(), Duration::from_secs(5))
+                .await
+        );
+
+        host_b.shutdown().await;
+        host_a.shutdown().await;
+    }
+
+    #[test]
+    fn configured_peer_requires_terminal_peer_id() {
+        let error = split_configured_peer("/ip4/127.0.0.1/tcp/4001".parse().unwrap())
+            .expect_err("peer ID is required");
+        assert!(matches!(error, HostError::InvalidConfiguredPeer(_)));
     }
 }
