@@ -188,6 +188,7 @@ rm -f "${WORK_DIRECTORY}/a.json" "${WORK_DIRECTORY}/b.json"
 start_node a 42001 "${DESCRIPTOR}" "${RPC_URL}" false true "${ACCOUNT_A_KEY}"
 start_node b 42002 "${DESCRIPTOR}" "${RPC_URL}" false false
 wait_for_status "${WORK_DIRECTORY}/b.json" '.state == "CONNECTED" and .connectedPeers >= 1' 'restarted A/B component'
+wait_for_status "${WORK_DIRECTORY}/a.json" '.connectedPeers >= 1' 'restarted node A status'
 A_PEER_ID="$(jq -r .peerId "${WORK_DIRECTORY}/a.json")"
 start_node c 42003 "${DESCRIPTOR}" 'http://127.0.0.1:1' false false '' \
   "/ip4/127.0.0.1/tcp/42001/p2p/${A_PEER_ID}"
