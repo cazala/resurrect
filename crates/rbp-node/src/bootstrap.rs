@@ -236,11 +236,11 @@ where
         let parallel = self.policy.maximum_parallel_dials.max(1);
         let timeout = self.policy.per_dial_timeout;
         let connector = self.connector;
-        let mut dials = stream::iter(
-            peers
-                .into_iter()
-                .map(move |peer| async move { connector.connect(peer, timeout).await }),
-        )
+        let mut dials = stream::iter(peers.into_iter().map(move |peer| async move {
+            tokio::time::timeout(timeout, connector.connect(peer, timeout))
+                .await
+                .unwrap_or(false)
+        }))
         .buffer_unordered(parallel);
 
         while dials.next().await.is_some() {
@@ -329,6 +329,19 @@ mod tests {
     struct Connector {
         connected: AtomicUsize,
         succeed: bool,
+    }
+
+    struct HangingConnector;
+
+    #[async_trait]
+    impl PeerConnector for HangingConnector {
+        async fn connected_peers(&self) -> usize {
+            0
+        }
+
+        async fn connect(&self, _peer: PeerCandidate, _timeout: Duration) -> bool {
+            std::future::pending().await
+        }
     }
 
     #[async_trait]
@@ -459,5 +472,33 @@ mod tests {
                 .unwrap();
         assert!(!outcome.announced);
         assert!(!announced.load(Ordering::SeqCst));
+    }
+
+    #[tokio::test]
+    async fn dead_record_timeout_cannot_stall_later_discovery_cycles() {
+        let empty = Source::default();
+        let native = Source::default();
+        let registry = Source {
+            peers: vec![peer(1)],
+            ..Source::default()
+        };
+        let publisher = Publisher {
+            eligible: false,
+            announced: Arc::new(AtomicBool::new(false)),
+        };
+        let connector = HangingConnector;
+        let mut bounded = policy();
+        bounded.per_dial_timeout = Duration::from_millis(1);
+        let controller =
+            BootstrapController::new(&empty, &native, &registry, &connector, &publisher, bounded);
+
+        let outcome = tokio::time::timeout(
+            Duration::from_millis(100),
+            controller.run_cycle(Namespace::default()),
+        )
+        .await
+        .expect("controller must enforce its own dial deadline")
+        .unwrap();
+        assert_eq!(outcome.state, BootstrapState::Backoff);
     }
 }

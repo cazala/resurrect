@@ -342,9 +342,9 @@ pub enum ScanError {
     #[error("provider chain ID {actual} does not match descriptor chain ID {expected}")]
     WrongChain {
         /// Descriptor chain.
-        expected: u64,
+        expected: alloy_primitives::U256,
         /// Provider chain.
-        actual: u64,
+        actual: alloy_primitives::U256,
     },
     /// Deployed contract constants differ from canonical v1.
     #[error("deployed registry constants are not RBP v1: {0:?}")]
@@ -368,7 +368,7 @@ pub enum ScanError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloy_primitives::Address;
+    use alloy_primitives::{Address, U256};
     use async_trait::async_trait;
     use rbp_core::{
         Announcement, DiscoverySourceKind, Endpoint, Namespace, PeerRecordCodec, PeerRecordError,
@@ -411,7 +411,7 @@ mod tests {
 
     #[derive(Debug)]
     struct MockProvider {
-        chain_id: u64,
+        chain_id: U256,
         blocks: Mutex<Vec<BlockInfo>>,
         announcements: Mutex<Vec<Announcement>>,
         max_range: u64,
@@ -431,7 +431,7 @@ mod tests {
 
     #[async_trait]
     impl RegistryProvider for MockProvider {
-        async fn chain_id(&self) -> Result<u64, ProviderError> {
+        async fn chain_id(&self) -> Result<U256, ProviderError> {
             Ok(self.chain_id)
         }
 
@@ -501,7 +501,7 @@ mod tests {
         NetworkDescriptor {
             rbp_version: 1,
             registry: RegistryDescriptor {
-                chain_id: 31337,
+                chain_id: U256::from(31337),
                 address: Address::repeat_byte(1),
                 deployment_block: 0,
                 max_ttl_seconds: MAX_TTL_SECONDS,
@@ -513,7 +513,7 @@ mod tests {
 
     fn provider(events: Vec<Announcement>) -> MockProvider {
         MockProvider {
-            chain_id: 31337,
+            chain_id: U256::from(31337),
             blocks: Mutex::new((0..=100).map(MockProvider::block_at).collect()),
             announcements: Mutex::new(events),
             max_range: 3,
@@ -572,11 +572,17 @@ mod tests {
         let namespace = Namespace::derive("scanner", 1);
         let mut expired = announcement(namespace, 60, &[3, 1]);
         expired.valid_until = 100 * 86_400;
+        let mut wrong_namespace = announcement(Namespace::derive("other", 1), 61, &[4, 1]);
+        wrong_namespace.valid_until = 100 * 86_400 + 1;
+        let mut unsupported = announcement(namespace, 62, &[5, 1]);
+        unsupported.record_type = 999;
         let provider = provider(vec![
             announcement(namespace, 50, &[1, 1]),
             announcement(namespace, 51, &[1, 2]),
             announcement(namespace, 52, b"invalid"),
             expired,
+            wrong_namespace,
+            unsupported,
         ]);
         let codecs = codecs();
         let report = RegistryScanner::new(
@@ -591,8 +597,8 @@ mod tests {
         .scan(&descriptor(namespace), b"local", None)
         .await
         .unwrap();
-        assert_eq!(report.logs_processed, 4);
-        assert_eq!(report.records_rejected, 2);
+        assert_eq!(report.logs_processed, 6);
+        assert_eq!(report.records_rejected, 4);
         assert_eq!(report.candidates.len(), 1);
         assert_eq!(report.candidates[0].sequence, 2);
     }
@@ -601,7 +607,7 @@ mod tests {
     async fn rejects_wrong_chain_before_scanning_logs() {
         let namespace = Namespace::derive("scanner", 1);
         let mut provider = provider(Vec::new());
-        provider.chain_id = 1;
+        provider.chain_id = U256::from(1);
         let codecs = codecs();
         let error = RegistryScanner::new(&provider, &codecs, ScannerConfig::default())
             .scan(&descriptor(namespace), b"local", None)

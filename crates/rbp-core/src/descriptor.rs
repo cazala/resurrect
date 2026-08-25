@@ -1,7 +1,7 @@
 use crate::{MAX_TTL_SECONDS, Namespace};
-use alloy_primitives::Address;
-use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
+use alloy_primitives::{Address, U256};
+use serde::{Deserialize, Deserializer, Serialize, Serializer, de::Visitor};
+use std::{collections::HashSet, fmt};
 use thiserror::Error;
 
 /// The only protocol version implemented by this crate.
@@ -12,10 +12,12 @@ pub const RBP_VERSION: u32 = 1;
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct RegistryDescriptor {
     /// EIP-155 chain identifier containing the registry.
-    pub chain_id: u64,
+    #[serde(with = "chain_id_serde")]
+    pub chain_id: U256,
     /// Registry contract address.
     pub address: Address,
     /// Earliest block that can contain registry announcements.
+    #[serde(with = "deployment_block_serde")]
     pub deployment_block: u64,
     /// Registry `MAX_TTL` in seconds.
     pub max_ttl_seconds: u32,
@@ -81,7 +83,7 @@ impl NetworkDescriptor {
     /// # Errors
     ///
     /// Returns [`DescriptorError::WrongChain`] when the chain IDs differ.
-    pub fn verify_chain_id(&self, actual: u64) -> Result<(), DescriptorError> {
+    pub fn verify_chain_id(&self, actual: U256) -> Result<(), DescriptorError> {
         if actual != self.registry.chain_id {
             return Err(DescriptorError::WrongChain {
                 expected: self.registry.chain_id,
@@ -131,10 +133,100 @@ pub enum DescriptorError {
     #[error("provider chain ID {actual} does not match descriptor chain ID {expected}")]
     WrongChain {
         /// Configured chain ID.
-        expected: u64,
+        expected: U256,
         /// Provider chain ID.
-        actual: u64,
+        actual: U256,
     },
+}
+
+mod chain_id_serde {
+    use super::{Deserializer, Serializer, U256, Visitor, fmt};
+
+    const MAX_SAFE_JSON_INTEGER: u64 = 9_007_199_254_740_991;
+
+    pub fn serialize<S: Serializer>(chain_id: &U256, serializer: S) -> Result<S::Ok, S::Error> {
+        if let Ok(value) = u64::try_from(*chain_id)
+            && value <= MAX_SAFE_JSON_INTEGER
+        {
+            return serializer.serialize_u64(value);
+        }
+        serializer.serialize_str(&chain_id.to_string())
+    }
+
+    pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<U256, D::Error> {
+        deserializer.deserialize_any(ChainIdVisitor)
+    }
+
+    struct ChainIdVisitor;
+
+    impl Visitor<'_> for ChainIdVisitor {
+        type Value = U256;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+            formatter.write_str("an unsigned uint256 number or canonical decimal string")
+        }
+
+        fn visit_u64<E: serde::de::Error>(self, value: u64) -> Result<Self::Value, E> {
+            Ok(U256::from(value))
+        }
+
+        fn visit_str<E: serde::de::Error>(self, value: &str) -> Result<Self::Value, E> {
+            if value.is_empty()
+                || (value.len() > 1 && value.starts_with('0'))
+                || !value.bytes().all(|byte| byte.is_ascii_digit())
+            {
+                return Err(E::custom(
+                    "chainId must be a canonical unsigned decimal integer",
+                ));
+            }
+            value.parse::<U256>().map_err(E::custom)
+        }
+    }
+}
+
+mod deployment_block_serde {
+    use super::{Deserializer, Serializer, Visitor, fmt};
+
+    const MAX_SAFE_JSON_INTEGER: u64 = 9_007_199_254_740_991;
+
+    #[allow(clippy::trivially_copy_pass_by_ref)] // serde `with` requires a shared reference.
+    pub fn serialize<S: Serializer>(value: &u64, serializer: S) -> Result<S::Ok, S::Error> {
+        if *value <= MAX_SAFE_JSON_INTEGER {
+            serializer.serialize_u64(*value)
+        } else {
+            serializer.serialize_str(&value.to_string())
+        }
+    }
+
+    pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<u64, D::Error> {
+        deserializer.deserialize_any(DeploymentBlockVisitor)
+    }
+
+    struct DeploymentBlockVisitor;
+
+    impl Visitor<'_> for DeploymentBlockVisitor {
+        type Value = u64;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+            formatter.write_str("an unsigned uint64 number or canonical decimal string")
+        }
+
+        fn visit_u64<E: serde::de::Error>(self, value: u64) -> Result<Self::Value, E> {
+            Ok(value)
+        }
+
+        fn visit_str<E: serde::de::Error>(self, value: &str) -> Result<Self::Value, E> {
+            if value.is_empty()
+                || (value.len() > 1 && value.starts_with('0'))
+                || !value.bytes().all(|byte| byte.is_ascii_digit())
+            {
+                return Err(E::custom(
+                    "deploymentBlock must be a canonical unsigned decimal integer",
+                ));
+            }
+            value.parse::<u64>().map_err(E::custom)
+        }
+    }
 }
 
 #[cfg(test)]
@@ -146,7 +238,7 @@ mod tests {
         NetworkDescriptor {
             rbp_version: 1,
             registry: RegistryDescriptor {
-                chain_id: 1,
+                chain_id: U256::from(1),
                 address: Address::from_str("0x1111111111111111111111111111111111111111").unwrap(),
                 deployment_block: 42,
                 max_ttl_seconds: MAX_TTL_SECONDS,
@@ -166,7 +258,7 @@ mod tests {
                 .unwrap()
                 .registry
                 .chain_id,
-            1
+            U256::from(1)
         );
     }
 
@@ -204,8 +296,40 @@ mod tests {
         ));
 
         assert!(matches!(
-            descriptor().verify_chain_id(10),
+            descriptor().verify_chain_id(U256::from(10)),
             Err(DescriptorError::WrongChain { .. })
         ));
+    }
+
+    #[test]
+    fn supports_full_width_chain_ids_without_lossy_json_numbers() {
+        let mut value = descriptor();
+        value.registry.chain_id = U256::MAX;
+        let json = value.canonical_json().unwrap();
+        assert!(json.contains(&format!("\"chainId\":\"{}\"", U256::MAX)));
+        assert_eq!(
+            NetworkDescriptor::from_json(&json)
+                .unwrap()
+                .registry
+                .chain_id,
+            U256::MAX
+        );
+        assert!(NetworkDescriptor::from_json(&json.replace(&U256::MAX.to_string(), "01")).is_err());
+    }
+
+    #[test]
+    fn supports_full_width_deployment_blocks_without_lossy_json_numbers() {
+        let mut value = descriptor();
+        value.registry.deployment_block = u64::MAX;
+        let json = value.canonical_json().unwrap();
+        assert!(json.contains(&format!("\"deploymentBlock\":\"{}\"", u64::MAX)));
+        assert_eq!(
+            NetworkDescriptor::from_json(&json)
+                .unwrap()
+                .registry
+                .deployment_block,
+            u64::MAX
+        );
+        assert!(NetworkDescriptor::from_json(&json.replace(&u64::MAX.to_string(), "01")).is_err());
     }
 }

@@ -1,4 +1,4 @@
-use alloy_primitives::{Address, B256};
+use alloy_primitives::{Address, B256, U256};
 use async_trait::async_trait;
 use rbp_core::{Announcement, Namespace};
 use std::fmt::Debug;
@@ -43,7 +43,7 @@ pub enum BlockReference {
 #[async_trait]
 pub trait RegistryProvider: Send + Sync + Debug {
     /// Returns `eth_chainId` without requesting account exposure.
-    async fn chain_id(&self) -> Result<u64, ProviderError>;
+    async fn chain_id(&self) -> Result<U256, ProviderError>;
 
     /// Reads canonical registry constants.
     async fn registry_constants(

@@ -2,6 +2,7 @@ use crate::{
     AnnouncementPublisher, BootstrapController, BootstrapPolicy, BootstrapState, DiscoverySource,
     NativeDiscovery, PeerConnector, RegistryTelemetry,
 };
+use rand::Rng as _;
 use rbp_core::Namespace;
 use serde::Serialize;
 use std::{
@@ -211,7 +212,7 @@ where
                 attempts = 0;
                 continue;
             }
-            let delay = exponential_backoff(
+            let delay = backoff_with_jitter(
                 self.policy.initial_backoff,
                 self.policy.maximum_backoff,
                 attempts,
@@ -238,6 +239,16 @@ fn connection_target(policy: &BootstrapPolicy) -> usize {
 fn exponential_backoff(initial: Duration, maximum: Duration, attempt: u32) -> Duration {
     let factor = 1_u32.checked_shl(attempt.min(20)).unwrap_or(u32::MAX);
     initial.saturating_mul(factor).min(maximum)
+}
+
+fn backoff_with_jitter(initial: Duration, maximum: Duration, attempt: u32) -> Duration {
+    let base = exponential_backoff(initial, maximum, attempt);
+    let lower = base / 2;
+    let window = base.saturating_sub(lower);
+    let maximum_nanos = u64::try_from(window.as_nanos()).unwrap_or(u64::MAX);
+    lower.saturating_add(Duration::from_nanos(
+        rand::rng().random_range(0..=maximum_nanos),
+    ))
 }
 
 async fn wait_or_shutdown<F>(duration: Duration, shutdown: &mut std::pin::Pin<&mut F>) -> bool
@@ -294,5 +305,17 @@ mod tests {
         );
         assert_eq!(exponential_backoff(initial, maximum, 3), maximum);
         assert_eq!(exponential_backoff(initial, maximum, u32::MAX), maximum);
+    }
+
+    #[test]
+    fn isolated_backoff_jitter_stays_within_half_to_full_exponential_delay() {
+        let initial = Duration::from_secs(2);
+        let maximum = Duration::from_secs(9);
+        for attempt in 0..16 {
+            let base = exponential_backoff(initial, maximum, attempt);
+            let actual = backoff_with_jitter(initial, maximum, attempt);
+            assert!(actual >= base / 2);
+            assert!(actual <= base);
+        }
     }
 }

@@ -1,6 +1,10 @@
 use crate::{AnnouncementPublisher, BootstrapError, DiscoverySource, SqlitePeerCache};
 use async_trait::async_trait;
-use rbp_core::{CodecRegistry, Namespace, NetworkDescriptor, PeerCandidate, RECORD_TYPE_LIBP2P};
+use rand::Rng as _;
+use rbp_core::{
+    CodecRegistry, DEFAULT_MAX_RECORD_BYTES, MAX_TTL_SECONDS, Namespace, NetworkDescriptor,
+    PeerCandidate, RBP_VERSION, RECORD_TYPE_LIBP2P,
+};
 use rbp_ethereum::{RegistryProvider, RegistryScanner, ScanCheckpoint, ScannerConfig};
 use rbp_libp2p::{Keypair, Multiaddr, sign_peer_record};
 use std::{
@@ -212,6 +216,28 @@ impl AnnouncementPublisher for RegistryAnnouncer {
                 "announcement TTL is outside registry bounds".to_owned(),
             ));
         }
+        let actual_chain = self
+            .provider
+            .chain_id()
+            .await
+            .map_err(|error| BootstrapError::Announcement(error.to_string()))?;
+        self.descriptor
+            .verify_chain_id(actual_chain)
+            .map_err(|error| BootstrapError::Announcement(error.to_string()))?;
+        let constants = self
+            .provider
+            .registry_constants(self.descriptor.registry.address)
+            .await
+            .map_err(|error| BootstrapError::Announcement(error.to_string()))?;
+        if constants.version != RBP_VERSION
+            || constants.max_ttl != MAX_TTL_SECONDS
+            || constants.max_ttl != self.descriptor.registry.max_ttl_seconds
+            || usize::try_from(constants.max_record_bytes).ok() != Some(DEFAULT_MAX_RECORD_BYTES)
+        {
+            return Err(BootstrapError::Announcement(
+                "deployed registry constants do not match RBP v1".to_owned(),
+            ));
+        }
         let sequence = self.sequence.fetch_add(1, Ordering::SeqCst);
         let record = sign_peer_record(&self.keypair, sequence, &self.addresses)
             .map_err(|error| BootstrapError::Announcement(error.to_string()))?;
@@ -227,16 +253,28 @@ impl AnnouncementPublisher for RegistryAnnouncer {
             .await
             .map_err(|error| BootstrapError::Announcement(error.to_string()))?;
         let now = unix_time().map_err(BootstrapError::Announcement)?;
-        let renewal_after = self
+        let base_renewal = self
             .renewal_interval
             .as_secs()
             .min(u64::from(ttl).saturating_div(2).max(1));
+        let renewal_after = jittered_renewal(base_renewal, u64::from(ttl));
         self.next_renewal
             .store(now.saturating_add(renewal_after), Ordering::Relaxed);
         self.telemetry.announcements.fetch_add(1, Ordering::Relaxed);
         tracing::info!(%transaction, sequence, ttl, "published signed RBP peer record");
         Ok(())
     }
+}
+
+fn jittered_renewal(base: u64, ttl: u64) -> u64 {
+    let window = (24 * 60 * 60)
+        .min(base.saturating_sub(1))
+        .min(ttl.saturating_sub(base).saturating_sub(1));
+    if window == 0 {
+        return base;
+    }
+    base.saturating_sub(window)
+        .saturating_add(rand::rng().random_range(0..=window.saturating_mul(2)))
 }
 
 fn sequence_now() -> u64 {
@@ -257,31 +295,29 @@ fn unix_time() -> Result<u64, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloy::primitives::{Address, B256};
-    use rbp_core::{MAX_TTL_SECONDS, RegistryDescriptor};
+    use alloy::primitives::{Address, B256, U256};
+    use rbp_core::RegistryDescriptor;
     use rbp_ethereum::{BlockInfo, BlockReference, ProviderError, RegistryConstants};
     use std::sync::Mutex as StdMutex;
 
     #[derive(Debug)]
     struct Provider {
         published: StdMutex<Vec<Vec<u8>>>,
+        chain_id: U256,
+        constants: RegistryConstants,
     }
 
     #[async_trait]
     impl RegistryProvider for Provider {
-        async fn chain_id(&self) -> Result<u64, ProviderError> {
-            Ok(31337)
+        async fn chain_id(&self) -> Result<U256, ProviderError> {
+            Ok(self.chain_id)
         }
 
         async fn registry_constants(
             &self,
             _address: Address,
         ) -> Result<RegistryConstants, ProviderError> {
-            Ok(RegistryConstants {
-                version: 1,
-                max_ttl: MAX_TTL_SECONDS,
-                max_record_bytes: 4096,
-            })
+            Ok(self.constants)
         }
 
         async fn block(
@@ -322,7 +358,7 @@ mod tests {
         NetworkDescriptor {
             rbp_version: 1,
             registry: RegistryDescriptor {
-                chain_id: 31337,
+                chain_id: U256::from(31337),
                 address: Address::ZERO,
                 deployment_block: 0,
                 max_ttl_seconds: MAX_TTL_SECONDS,
@@ -336,6 +372,12 @@ mod tests {
     async fn eligible_announcer_signs_and_tracks_renewal() {
         let provider = Arc::new(Provider {
             published: StdMutex::new(Vec::new()),
+            chain_id: U256::from(31337),
+            constants: RegistryConstants {
+                version: 1,
+                max_ttl: MAX_TTL_SECONDS,
+                max_record_bytes: 4096,
+            },
         });
         let telemetry = Arc::new(RegistryTelemetry::default());
         let announcer = RegistryAnnouncer::new(
@@ -352,5 +394,53 @@ mod tests {
         assert!(!announcer.renewal_due());
         assert_eq!(provider.published.lock().unwrap().len(), 1);
         assert_eq!(telemetry.snapshot().announcements, 1);
+    }
+
+    #[tokio::test]
+    async fn announcer_rejects_wrong_chain_and_registry_constants_before_writing() {
+        for provider in [
+            Provider {
+                published: StdMutex::new(Vec::new()),
+                chain_id: U256::from(1),
+                constants: RegistryConstants {
+                    version: 1,
+                    max_ttl: MAX_TTL_SECONDS,
+                    max_record_bytes: 4096,
+                },
+            },
+            Provider {
+                published: StdMutex::new(Vec::new()),
+                chain_id: U256::from(31337),
+                constants: RegistryConstants {
+                    version: 2,
+                    max_ttl: MAX_TTL_SECONDS,
+                    max_record_bytes: 4096,
+                },
+            },
+        ] {
+            let provider = Arc::new(provider);
+            let announcer = RegistryAnnouncer::new(
+                provider.clone(),
+                descriptor(),
+                Keypair::generate_ed25519(),
+                vec!["/ip4/127.0.0.1/tcp/4001".parse().unwrap()],
+                true,
+                Duration::from_secs(600),
+                Arc::new(RegistryTelemetry::default()),
+            );
+            assert!(announcer.announce(Duration::from_secs(60)).await.is_err());
+            assert!(provider.published.lock().unwrap().is_empty());
+        }
+    }
+
+    #[test]
+    fn renewal_jitter_is_symmetric_bounded_and_before_expiry() {
+        for _ in 0..128 {
+            let delay = jittered_renewal(14 * 24 * 60 * 60, 30 * 24 * 60 * 60);
+            assert!(delay >= 13 * 24 * 60 * 60);
+            assert!(delay <= 15 * 24 * 60 * 60);
+            assert!(delay < 30 * 24 * 60 * 60);
+        }
+        assert_eq!(jittered_renewal(1, 1), 1);
     }
 }

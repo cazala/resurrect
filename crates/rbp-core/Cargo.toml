@@ -8,6 +8,7 @@ authors.workspace = true
 license.workspace = true
 repository.workspace = true
 homepage.workspace = true
+readme.workspace = true
 keywords = ["p2p", "ethereum", "bootstrap", "libp2p"]
 categories = ["network-programming", "cryptography"]
 

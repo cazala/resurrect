@@ -15,6 +15,7 @@ authors = ["RBP contributors"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/cazala/rbp"
 homepage = "https://github.com/cazala/rbp"
+readme = "README.md"
 
 [workspace.dependencies]
 alloy = { version = "=1.0.30", default-features = true }

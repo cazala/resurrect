@@ -4,7 +4,7 @@ use crate::{
 use alloy::{
     eips::BlockNumberOrTag,
     network::EthereumWallet,
-    primitives::{Address, B256, Bytes},
+    primitives::{Address, B256, Bytes, U256},
     providers::{DynProvider, Provider, ProviderBuilder},
     rpc::types::Filter,
     signers::local::PrivateKeySigner,
@@ -68,9 +68,10 @@ impl AlloyRegistryProvider {
 
 #[async_trait]
 impl RegistryProvider for AlloyRegistryProvider {
-    async fn chain_id(&self) -> Result<u64, ProviderError> {
+    async fn chain_id(&self) -> Result<U256, ProviderError> {
         self.provider
-            .get_chain_id()
+            .client()
+            .request_noparams::<U256>("eth_chainId")
             .await
             .map_err(map_request_error)
     }

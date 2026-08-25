@@ -100,6 +100,9 @@ fn is_global_ipv4(ip: Ipv4Addr) -> bool {
 }
 
 fn is_global_ipv6(ip: Ipv6Addr) -> bool {
+    if let Some(mapped) = ip.to_ipv4_mapped() {
+        return is_global_ipv4(mapped);
+    }
     let segments = ip.segments();
     !(ip.is_unspecified()
         || ip.is_loopback()
@@ -120,9 +123,11 @@ mod tests {
         let local = Multiaddr::from_str("/ip4/127.0.0.1/tcp/4001").unwrap();
         let private = Multiaddr::from_str("/ip4/10.0.0.1/tcp/4001").unwrap();
         let unspecified = Multiaddr::from_str("/ip4/0.0.0.0/tcp/4001").unwrap();
+        let mapped_loopback = Multiaddr::from_str("/ip6/::ffff:127.0.0.1/tcp/4001").unwrap();
         assert!(!policy.accepts(&local, None, DialContext::NativeServer));
         assert!(!policy.accepts(&private, None, DialContext::NativeServer));
         assert!(!policy.accepts(&unspecified, None, DialContext::NativeServer));
+        assert!(!policy.accepts(&mapped_loopback, None, DialContext::NativeServer));
     }
 
     #[test]
