@@ -12,6 +12,6 @@ import registryAbi from '@rbp-protocol/contracts/abi/RBPRegistryV1.json' with { 
 
 Solidity tools can import `@rbp-protocol/contracts/src/RBPRegistryV1.sol`. The source exposes exactly `VERSION`, `MAX_TTL`, `MAX_RECORD_BYTES`, and `announce`. TTL must be between one second and 90 days; records must be between one and 4096 bytes. Expiry is computed from the block timestamp and emitted with the namespace, codec, and bytes.
 
-The source is released under CC0-1.0. Consumers should deploy and verify the exact source themselves, then pin the chain ID, address, deployment block, and constants in their application descriptor. This package does not designate or endorse a production deployment.
+The source is released under [CC0-1.0](https://creativecommons.org/publicdomain/zero/1.0/). Consumers should deploy and verify the exact source themselves, then pin the chain ID, address, deployment block, and constants in their application descriptor. This package does not designate or endorse a production deployment.
 
 An onchain event is an untrusted discovery hint. Consumers must still verify the embedded signed peer record, sequence, expiry, endpoint policy, and application handshake.
