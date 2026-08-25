@@ -1,0 +1,10 @@
+{
+  "name": "rbp-workspace",
+  "private": true,
+  "packageManager": "pnpm@11.17.0",
+  "scripts": {
+    "build": "pnpm --recursive build",
+    "check": "pnpm --recursive check",
+    "test": "pnpm --recursive test"
+  }
+}

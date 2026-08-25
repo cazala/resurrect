@@ -1,0 +1,30 @@
+{
+  "name": "@rbp-protocol/contracts",
+  "version": "0.1.0",
+  "description": "Canonical immutable Solidity registry source and ABI for Rebootable Bootstrap Protocol v1",
+  "license": "CC0-1.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cazala/rbp.git",
+    "directory": "packages/contracts"
+  },
+  "homepage": "https://github.com/cazala/rbp",
+  "files": [
+    "abi",
+    "src",
+    "README.md"
+  ],
+  "exports": {
+    "./abi/RBPRegistryV1.json": "./abi/RBPRegistryV1.json",
+    "./src/RBPRegistryV1.sol": "./src/RBPRegistryV1.sol"
+  },
+  "scripts": {
+    "build": "node -e \"JSON.parse(require('node:fs').readFileSync('abi/RBPRegistryV1.json'))\"",
+    "check": "node -e \"JSON.parse(require('node:fs').readFileSync('abi/RBPRegistryV1.json'))\"",
+    "test": "node -e \"JSON.parse(require('node:fs').readFileSync('abi/RBPRegistryV1.json'))\""
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}
