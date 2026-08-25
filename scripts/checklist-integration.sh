@@ -11,9 +11,15 @@ RPC_URL="http://127.0.0.1:${RPC_PORT}"
 WORK_DIRECTORY="$(mktemp -d "${TMPDIR:-/tmp}/rbp-checklist.XXXXXX")"
 ACCOUNT_A_KEY="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
 ACCOUNT_D_KEY="0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
-ACCOUNT_F_KEY="0x5de4111afa1c4b3daadb435b6b1e93a071320d7d95bbd3eaa1272d2d4ec56d"
 NODE_PIDS=()
 ANVIL_PID=""
+
+for private_key in "${ACCOUNT_A_KEY}" "${ACCOUNT_D_KEY}"; do
+  if [[ ! "${private_key}" =~ ^0x[[:xdigit:]]{64}$ ]]; then
+    echo "Anvil fixture key must contain exactly 32 bytes" >&2
+    exit 1
+  fi
+done
 
 stop_nodes() {
   local pid
@@ -207,7 +213,7 @@ stop_nodes
 SIMULTANEOUS_NAMESPACE="$("${CAST_BIN}" keccak 'rbp:ci-simultaneous:1')"
 SIMULTANEOUS_DESCRIPTOR="${WORK_DIRECTORY}/simultaneous.json"
 write_descriptor "${SIMULTANEOUS_DESCRIPTOR}" "${SIMULTANEOUS_NAMESPACE}"
-start_node f 42006 "${SIMULTANEOUS_DESCRIPTOR}" "${RPC_URL}" false true "${ACCOUNT_F_KEY}"
+start_node f 42006 "${SIMULTANEOUS_DESCRIPTOR}" "${RPC_URL}" false true "${ACCOUNT_A_KEY}"
 start_node g 42007 "${SIMULTANEOUS_DESCRIPTOR}" "${RPC_URL}" false true "${ACCOUNT_D_KEY}"
 wait_for_status "${WORK_DIRECTORY}/f.json" '.registry.announcements >= 1' 'node F simultaneous announcement'
 wait_for_status "${WORK_DIRECTORY}/g.json" '.registry.announcements >= 1' 'node G simultaneous announcement'
