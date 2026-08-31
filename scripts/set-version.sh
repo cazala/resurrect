@@ -28,7 +28,9 @@ for (const file of ['packages/ts/package.json', 'packages/contracts/package.json
 }
 NODE
 
-cargo metadata --no-deps --format-version 1 >/dev/null
+# Resolve the complete workspace so Cargo.lock records the new workspace package
+# versions before every subsequent command runs with --locked.
+cargo metadata --format-version 1 >/dev/null
 for manifest in packages/ts/package.json packages/contracts/package.json; do
   test "$(node -p "require('./${manifest}').version")" = "${VERSION}"
 done
