@@ -74,6 +74,14 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: scripts/check-packages.sh
+      - name: Verify publish-time version propagation
+        run: |
+          base_version="$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -1)"
+          stable_base="${base_version%%-*}"
+          scripts/set-version.sh \
+            "${stable_base}-dev.ci.${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}"
+          cargo check --workspace --all-targets --locked
+          scripts/check-packages.sh
 
   fork:
     runs-on: ubuntu-latest
