@@ -1,0 +1,49 @@
+{
+  "name": "@resurrect-protocol/client",
+  "version": "0.1.0",
+  "description": "Browser and static-client implementation of Resurrect v1",
+  "type": "module",
+  "license": "MIT OR Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cazala/resurrect.git",
+    "directory": "packages/ts"
+  },
+  "homepage": "https://github.com/cazala/resurrect",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "check": "tsc --noEmit",
+    "prepack": "npm run build",
+    "test": "vitest run",
+    "test:unit": "vitest run"
+  },
+  "dependencies": {
+    "@libp2p/peer-id": "6.0.14",
+    "@libp2p/peer-record": "9.0.15",
+    "@multiformats/multiaddr": "13.0.3",
+    "viem": "2.55.16"
+  },
+  "devDependencies": {
+    "@libp2p/crypto": "5.1.22",
+    "typescript": "7.0.2",
+    "vitest": "4.1.10"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

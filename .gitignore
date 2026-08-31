@@ -1,0 +1,30 @@
+# Rust
+/target/
+
+# Foundry
+/contracts/cache/
+/contracts/out/
+/contracts/broadcast/
+/cache/
+/out/
+/broadcast/
+
+# JavaScript
+node_modules/
+.pnpm-store/
+dist/
+coverage/
+artifacts/
+*.tsbuildinfo
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Editors and operating systems
+.DS_Store
+.idea/
+.vscode/

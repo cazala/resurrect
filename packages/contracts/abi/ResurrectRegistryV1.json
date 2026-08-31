@@ -1,0 +1,48 @@
+[
+  {
+    "type": "function",
+    "name": "MAX_RECORD_BYTES",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint32", "internalType": "uint32" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MAX_TTL",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint32", "internalType": "uint32" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "VERSION",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint32", "internalType": "uint32" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "announce",
+    "inputs": [
+      { "name": "namespace", "type": "bytes32", "internalType": "bytes32" },
+      { "name": "recordType", "type": "uint32", "internalType": "uint32" },
+      { "name": "ttl", "type": "uint32", "internalType": "uint32" },
+      { "name": "peerRecord", "type": "bytes", "internalType": "bytes" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "PeerAnnounced",
+    "inputs": [
+      { "name": "namespace", "type": "bytes32", "indexed": true, "internalType": "bytes32" },
+      { "name": "recordType", "type": "uint32", "indexed": true, "internalType": "uint32" },
+      { "name": "validUntil", "type": "uint64", "indexed": false, "internalType": "uint64" },
+      { "name": "peerRecord", "type": "bytes", "indexed": false, "internalType": "bytes" }
+    ],
+    "anonymous": false
+  },
+  { "type": "error", "name": "InvalidTTL", "inputs": [] },
+  { "type": "error", "name": "RecordTooLarge", "inputs": [] }
+]
