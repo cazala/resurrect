@@ -9,7 +9,7 @@ import {
 import { describe, expect, it } from 'vitest'
 import vectors from '../../../test-vectors/peer-records/libp2p-ed25519.json' with { type: 'json' }
 import {
-  RbpBrowserClient,
+  ResurrectBrowserClient,
   deriveNamespace,
   injectedProvider,
   jsonRpcProvider,
@@ -81,7 +81,7 @@ class MockProvider implements RegistryProvider {
 
 function descriptor(): NetworkDescriptor {
   return parseDescriptor({
-    rbpVersion: 1,
+    resurrectVersion: 1,
     registry: {
       chainId: 31337,
       address: '0x1111111111111111111111111111111111111111',
@@ -96,7 +96,7 @@ function descriptor(): NetworkDescriptor {
 describe('browser registry scanner', () => {
   it('verifies chain/constants and recovers a browser seed', async () => {
     const provider = new MockProvider()
-    const report = await new RbpBrowserClient(descriptor(), provider).scan({ confirmations: 0n })
+    const report = await new ResurrectBrowserClient(descriptor(), provider).scan({ confirmations: 0n })
     expect(report.startBlock).toBe(1n)
     expect(report.logsProcessed).toBe(1)
     expect(report.candidates).toHaveLength(1)
@@ -106,7 +106,7 @@ describe('browser registry scanner', () => {
 
   it('rejects the wrong chain before scanning', async () => {
     const provider = new MockProvider(1n)
-    await expect(new RbpBrowserClient(descriptor(), provider).scan({ confirmations: 0n })).rejects.toThrow(
+    await expect(new ResurrectBrowserClient(descriptor(), provider).scan({ confirmations: 0n })).rejects.toThrow(
       /does not match/
     )
     expect(provider.calls).not.toContain('eth_getLogs')
@@ -115,7 +115,7 @@ describe('browser registry scanner', () => {
   it('switches away from a failing provider', async () => {
     const failing = new MockProvider()
     failing.failLogs = true
-    const client = new RbpBrowserClient(descriptor(), failing)
+    const client = new ResurrectBrowserClient(descriptor(), failing)
     await expect(client.scan({ confirmations: 0n })).rejects.toThrow(/unavailable/)
     const replacement = new MockProvider()
     client.setProvider(replacement)
@@ -132,7 +132,7 @@ describe('browser registry scanner', () => {
       return new Response(JSON.stringify({ jsonrpc: '2.0', id: request.id, result }))
     }
     const custom = jsonRpcProvider('https://rpc.example', { fetch: fetcher })
-    await expect(new RbpBrowserClient(descriptor(), custom).scan({ confirmations: 0n })).resolves.toMatchObject({
+    await expect(new ResurrectBrowserClient(descriptor(), custom).scan({ confirmations: 0n })).resolves.toMatchObject({
       logsProcessed: 1
     })
 
@@ -143,7 +143,7 @@ describe('browser registry scanner', () => {
         return backend.request(method, Array.isArray(params) ? params : [])
       }
     })
-    await expect(new RbpBrowserClient(descriptor(), injected).scan({ confirmations: 0n })).resolves.toMatchObject({
+    await expect(new ResurrectBrowserClient(descriptor(), injected).scan({ confirmations: 0n })).resolves.toMatchObject({
       logsProcessed: 1
     })
     expect(requested).not.toContain('eth_requestAccounts')
@@ -156,7 +156,7 @@ describe('browser registry scanner', () => {
       { validUntil: 2000n, recordHex: vectors.browser.recordHex as Hex }
     ])
     provider.rangeFailures = 1
-    const report = await new RbpBrowserClient(descriptor(), provider).scan({
+    const report = await new ResurrectBrowserClient(descriptor(), provider).scan({
       confirmations: 0n,
       initialChunkSize: 8n,
       minimumChunkSize: 1n
@@ -172,7 +172,7 @@ describe('browser registry scanner', () => {
       { validUntil: 2000n, recordHex: vectors.nativeOnly.recordHex as Hex },
       { validUntil: 2000n, recordHex: vectors.browser.recordHex as Hex }
     ])
-    const report = await new RbpBrowserClient(descriptor(), provider).scan({
+    const report = await new ResurrectBrowserClient(descriptor(), provider).scan({
       confirmations: 0n,
       maxCandidates: 1
     })

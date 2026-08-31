@@ -27,7 +27,7 @@ The fork suite is safe to run without a credential—it skips when `MAINNET_RPC_
 
 ```bash
 MAINNET_RPC_URL=https://... \
-  forge test --root contracts --match-contract RBPRegistryV1ForkTest -vv
+  forge test --root contracts --match-contract ResurrectRegistryV1ForkTest -vv
 ```
 
 No production contract address is required because the canonical contract is self-contained and immutable.
@@ -35,9 +35,9 @@ No production contract address is required because the canonical contract is sel
 ## TypeScript suites
 
 ```bash
-pnpm --filter @rbp-protocol/client check
-pnpm --filter @rbp-protocol/client build
-pnpm --filter @rbp-protocol/client test
+pnpm --filter @resurrect-protocol/client check
+pnpm --filter @resurrect-protocol/client build
+pnpm --filter @resurrect-protocol/client test
 ```
 
 Tests cover strict descriptors, namespace parity, custom JSON-RPC, injected EIP-1193 reads without account requests, explicit-only URL persistence, wrong-chain rejection, provider replacement, constant verification, adaptive log ranges, duplicate/expiry filtering, candidate bounds, secure browser endpoints, private/native-only rejection, and signed-envelope tampering.
@@ -51,7 +51,7 @@ Checked-in descriptor, registry-event, and peer-record vectors are consumed inde
 Regenerate for inspection with:
 
 ```bash
-cargo run -p rbp-libp2p --example generate_vector
+cargo run -p resurrect-libp2p --example generate_vector
 ```
 
 Do not update the checked-in vector casually; a change should explain the intended wire-format difference and must pass both language suites.
@@ -62,17 +62,17 @@ Do not update the checked-in vector casually; a change should explain the intend
 scripts/checklist-integration.sh
 ```
 
-The script runs prerequisite suites, deploys the exact registry to a fresh Anvil chain, verifies its complete method-selector surface, and launches actual `rbp-node` processes. It tests:
+The script runs prerequisite suites, deploys the exact registry to a fresh Anvil chain, verifies its complete method-selector surface, and launches actual `resurrect-node` processes. It tests:
 
 1. A starts with no peers/events and self-announces.
-2. B has no cache, native discovery, DNS seed, or knowledge of A; it scans RBP and completes an authenticated Noise connection to A.
+2. B has no cache, native discovery, DNS seed, or knowledge of A; it scans Resurrect and completes an authenticated Noise connection to A.
 3. A/B restart; C starts with an authenticated configured libp2p peer and an unreachable RPC, then joins natively with zero registry scan attempts. This is deterministic on CI runners where multicast interfaces are absent or unroutable.
 4. All processes stop; unrelated D/E identities and payer accounts reboot despite stale unreachable records.
 5. F/G start simultaneously under a fresh namespace, both announce, and a connection forms.
 
 The test uses private endpoints only under an explicit local-test flag. It has bounded waits and captures per-node logs/status on failure. CI uploads `artifacts/implementer-checklist.json` even when the job fails.
 
-Ports default to Anvil `18545` and node TCP `42001` through `42007`; do not run conflicting listeners. The Anvil port can be changed with `RBP_TEST_RPC_PORT`.
+Ports default to Anvil `18545` and node TCP `42001` through `42007`; do not run conflicting listeners. The Anvil port can be changed with `RESURRECT_TEST_RPC_PORT`.
 
 ## Package verification
 

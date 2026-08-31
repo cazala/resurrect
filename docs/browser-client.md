@@ -1,13 +1,13 @@
 # Browser and static client
 
-`@rbp-protocol/client` implements read-only RBP discovery for web and static applications. It accepts a caller-owned provider and does not contain a mandatory RPC hostname, wallet, hosted API, analytics endpoint, or account-access flow.
+`@resurrect-protocol/client` implements read-only Resurrect discovery for web and static applications. It accepts a caller-owned provider and does not contain a mandatory RPC hostname, wallet, hosted API, analytics endpoint, or account-access flow.
 
 ## Provider choices
 
 Use `jsonRpcProvider(url)` for a URL entered or configured by the user, or `injectedProvider(eip1193)` for a wallet/host provider. Both expose the same minimal `RegistryProvider` interface. A failing provider can be replaced at runtime with `client.setProvider(replacement)`.
 
 ```ts
-const client = new RbpBrowserClient(
+const client = new ResurrectBrowserClient(
   parseDescriptor(descriptorJson),
   jsonRpcProvider(userRpcUrl)
 )

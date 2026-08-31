@@ -15,7 +15,7 @@ fi
 
 REPOSITORY_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${REPOSITORY_ROOT}"
-NPM_CONFIG_USERCONFIG="$(mktemp "${TMPDIR:-/tmp}/rbp-npmrc.XXXXXX")"
+NPM_CONFIG_USERCONFIG="$(mktemp "${TMPDIR:-/tmp}/resurrect-npmrc.XXXXXX")"
 export NPM_CONFIG_USERCONFIG
 trap 'rm -f "${NPM_CONFIG_USERCONFIG}"' EXIT
 npm config set registry https://registry.npmjs.org/ --location=user
@@ -41,10 +41,10 @@ publish_crate() {
   done
 }
 
-publish_crate rbp-core
-publish_crate rbp-libp2p
-publish_crate rbp-ethereum
-publish_crate rbp-node
+publish_crate resurrect-core
+publish_crate resurrect-libp2p
+publish_crate resurrect-ethereum
+publish_crate resurrect-node
 
 if [[ -n "${NODE_AUTH_TOKEN:-}" ]]; then
   npm config set //registry.npmjs.org/:_authToken "${NODE_AUTH_TOKEN}" --location=user

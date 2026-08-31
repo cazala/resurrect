@@ -8,7 +8,7 @@ export interface JsonRegistryDescriptor {
 }
 
 export interface JsonNetworkDescriptor {
-  rbpVersion: number
+  resurrectVersion: number
   registry: JsonRegistryDescriptor
   namespace: Hex
   acceptedRecordTypes: number[]
@@ -22,7 +22,7 @@ export interface RegistryDescriptor {
 }
 
 export interface NetworkDescriptor {
-  rbpVersion: 1
+  resurrectVersion: 1
   registry: RegistryDescriptor
   namespace: Hex
   acceptedRecordTypes: readonly number[]

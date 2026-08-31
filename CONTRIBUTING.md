@@ -1,6 +1,6 @@
 # Contributing
 
-Contributions should preserve RBP's narrow purpose: permissionless root rendezvous without an owner, mandatory operator service, or application-specific semantics.
+Contributions should preserve Resurrect's narrow purpose: permissionless root rendezvous without an owner, mandatory operator service, or application-specific semantics.
 
 ## Development setup
 
@@ -17,7 +17,7 @@ forge build --root contracts
 
 - Add regression tests for behavior changes and adversarial tests for parsers, providers, codecs, endpoint policy, or resource limits.
 - Keep the descriptor strict and provider-neutral.
-- Keep `RBPRegistryV1` stateless, immutable, and permissionless.
+- Keep `ResurrectRegistryV1` stateless, immutable, and permissionless.
 - Treat discovery input as hostile and preserve explicit bounds.
 - Maintain Rust/TypeScript interoperability vectors when wire behavior changes.
 - Update public docs and changelog for user-visible changes.
@@ -42,7 +42,7 @@ Run the optional fork suite with `MAINNET_RPC_URL` when a change depends on real
 
 ## Protocol changes
 
-A change to registry semantics, descriptor fields, namespace derivation, assigned codec numbers, signing domains, or validation requirements is a protocol change, not a routine implementation refactor. Update `docs/spec.md`, explain compatibility and migration, add cross-version tests, and choose a new RBP/application major version where interoperability would be unsafe.
+A change to registry semantics, descriptor fields, namespace derivation, assigned codec numbers, signing domains, or validation requirements is a protocol change, not a routine implementation refactor. Update `docs/spec.md`, explain compatibility and migration, add cross-version tests, and choose a new Resurrect/application major version where interoperability would be unsafe.
 
 ## Commits and review
 

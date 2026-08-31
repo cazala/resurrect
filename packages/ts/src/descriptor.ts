@@ -1,7 +1,7 @@
 import { getAddress, isAddress, isHex, keccak256, stringToHex } from 'viem'
 import type { JsonNetworkDescriptor, NetworkDescriptor } from './types.js'
 
-export const RBP_VERSION = 1 as const
+export const RESURRECT_VERSION = 1 as const
 export const MAX_TTL_SECONDS = 7_776_000
 const UINT64_MAX = (1n << 64n) - 1n
 const UINT256_MAX = (1n << 256n) - 1n
@@ -10,20 +10,20 @@ export function deriveNamespace(application: string, majorVersion: bigint | numb
   if (application.length === 0) throw new Error('application identifier must not be empty')
   const major = BigInt(majorVersion)
   if (major < 0n) throw new Error('major protocol version must not be negative')
-  return keccak256(stringToHex(`rbp:${application}:${major}`))
+  return keccak256(stringToHex(`resurrect:${application}:${major}`))
 }
 
 export function parseDescriptor(input: unknown): NetworkDescriptor {
   if (!isRecord(input)) throw new Error('descriptor must be an object')
-  assertExactKeys(input, ['acceptedRecordTypes', 'namespace', 'rbpVersion', 'registry'])
-  if (input.rbpVersion !== RBP_VERSION) throw new Error('unsupported RBP version')
+  assertExactKeys(input, ['acceptedRecordTypes', 'namespace', 'registry', 'resurrectVersion'])
+  if (input.resurrectVersion !== RESURRECT_VERSION) throw new Error('unsupported Resurrect version')
   if (!isRecord(input.registry)) throw new Error('descriptor registry must be an object')
   assertExactKeys(input.registry, ['address', 'chainId', 'deploymentBlock', 'maxTtlSeconds'])
   if (typeof input.registry.address !== 'string' || !isAddress(input.registry.address, { strict: true })) {
     throw new Error('invalid registry address')
   }
   if (input.registry.maxTtlSeconds !== MAX_TTL_SECONDS) {
-    throw new Error('registry max TTL does not match RBP v1')
+    throw new Error('registry max TTL does not match Resurrect v1')
   }
   if (typeof input.namespace !== 'string' || !isHex(input.namespace) || input.namespace.length !== 66) {
     throw new Error('invalid namespace')
@@ -41,7 +41,7 @@ export function parseDescriptor(input: unknown): NetworkDescriptor {
   const chainId = parseUnsigned(input.registry.chainId, 'chainId', UINT256_MAX)
   const deploymentBlock = parseUnsigned(input.registry.deploymentBlock, 'deploymentBlock', UINT64_MAX)
   return {
-    rbpVersion: RBP_VERSION,
+    resurrectVersion: RESURRECT_VERSION,
     registry: {
       chainId,
       address: getAddress(input.registry.address),

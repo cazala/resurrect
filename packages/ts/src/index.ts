@@ -1,7 +1,7 @@
-export { RbpBrowserClient } from './client.js'
+export { ResurrectBrowserClient } from './client.js'
 export {
   MAX_TTL_SECONDS,
-  RBP_VERSION,
+  RESURRECT_VERSION,
   deriveNamespace,
   parseDescriptor,
   parseDescriptorJson

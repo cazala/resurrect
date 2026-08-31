@@ -5,10 +5,10 @@ REPOSITORY_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ANVIL_BIN="${ANVIL_BIN:-anvil}"
 FORGE_BIN="${FORGE_BIN:-forge}"
 CAST_BIN="${CAST_BIN:-cast}"
-NODE_BIN="${NODE_BIN:-${REPOSITORY_ROOT}/target/debug/rbp-node}"
-RPC_PORT="${RBP_TEST_RPC_PORT:-18545}"
+NODE_BIN="${NODE_BIN:-${REPOSITORY_ROOT}/target/debug/resurrect-node}"
+RPC_PORT="${RESURRECT_TEST_RPC_PORT:-18545}"
 RPC_URL="http://127.0.0.1:${RPC_PORT}"
-WORK_DIRECTORY="$(mktemp -d "${TMPDIR:-/tmp}/rbp-checklist.XXXXXX")"
+WORK_DIRECTORY="$(mktemp -d "${TMPDIR:-/tmp}/resurrect-checklist.XXXXXX")"
 ACCOUNT_A_KEY="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
 ACCOUNT_D_KEY="0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
 NODE_PIDS=()
@@ -74,7 +74,7 @@ write_descriptor() {
   local file="$1"
   local namespace="$2"
   cat >"${file}" <<JSON
-{"rbpVersion":1,"registry":{"chainId":31337,"address":"${REGISTRY_ADDRESS}","deploymentBlock":${DEPLOYMENT_BLOCK},"maxTtlSeconds":7776000},"namespace":"${namespace}","acceptedRecordTypes":[2]}
+{"resurrectVersion":1,"registry":{"chainId":31337,"address":"${REGISTRY_ADDRESS}","deploymentBlock":${DEPLOYMENT_BLOCK},"maxTtlSeconds":7776000},"namespace":"${namespace}","acceptedRecordTypes":[2]}
 JSON
 }
 
@@ -112,7 +112,7 @@ start_node() {
     arguments+=(--native-peer "${native_peer}")
   fi
   if [[ -n "${ethereum_key}" ]]; then
-    env RBP_ETHEREUM_PRIVATE_KEY="${ethereum_key}" "${NODE_BIN}" "${arguments[@]}" \
+    env RESURRECT_ETHEREUM_PRIVATE_KEY="${ethereum_key}" "${NODE_BIN}" "${arguments[@]}" \
       >"${WORK_DIRECTORY}/${name}.log" 2>&1 &
   else
     "${NODE_BIN}" "${arguments[@]}" >"${WORK_DIRECTORY}/${name}.log" 2>&1 &
@@ -133,7 +133,7 @@ cat >artifacts/implementer-checklist.json <<JSON
   "invalidAndExpiredRecordsRejected": false,
   "recoveredEndpointDialed": false,
   "nodeASelfAnnounced": false,
-  "nodeBDiscoveredOnlyThroughRbp": false,
+  "nodeBDiscoveredOnlyThroughResurrect": false,
   "nodeCJoinedThroughNativeDiscoveryWithoutRegistry": false,
   "callerSuppliedRegistryProvider": false,
   "browserCustomAndInjectedProvidersWithoutAccounts": false,
@@ -147,11 +147,11 @@ JSON
 
 "${FORGE_BIN}" test --root contracts
 cargo test --workspace --all-targets --locked
-pnpm --filter @rbp-protocol/client test
-cargo build -p rbp-node --locked
+pnpm --filter @resurrect-protocol/client test
+cargo build -p resurrect-node --locked
 
-cmp contracts/src/RBPRegistryV1.sol packages/contracts/src/RBPRegistryV1.sol
-node -e "JSON.parse(require('node:fs').readFileSync('packages/contracts/abi/RBPRegistryV1.json'))"
+cmp contracts/src/ResurrectRegistryV1.sol packages/contracts/src/ResurrectRegistryV1.sol
+node -e "JSON.parse(require('node:fs').readFileSync('packages/contracts/abi/ResurrectRegistryV1.json'))"
 
 "${ANVIL_BIN}" --port "${RPC_PORT}" --chain-id 31337 --silent \
   >"${WORK_DIRECTORY}/anvil.log" 2>&1 &
@@ -160,7 +160,7 @@ wait_for_rpc
 
 DEPLOYMENT_JSON="$("${FORGE_BIN}" create \
   --root contracts \
-  src/RBPRegistryV1.sol:RBPRegistryV1 \
+  src/ResurrectRegistryV1.sol:ResurrectRegistryV1 \
   --rpc-url "${RPC_URL}" \
   --private-key "${ACCOUNT_A_KEY}" \
   --broadcast \
@@ -170,11 +170,11 @@ DEPLOYMENT_TRANSACTION="$(jq -r .transactionHash <<<"${DEPLOYMENT_JSON}")"
 DEPLOYMENT_BLOCK_HEX="$("${CAST_BIN}" receipt "${DEPLOYMENT_TRANSACTION}" --rpc-url "${RPC_URL}" --json | jq -r .blockNumber)"
 DEPLOYMENT_BLOCK="$("${CAST_BIN}" to-dec "${DEPLOYMENT_BLOCK_HEX}")"
 
-METHODS_JSON="$("${FORGE_BIN}" inspect --root contracts src/RBPRegistryV1.sol:RBPRegistryV1 methodIdentifiers --json)"
+METHODS_JSON="$("${FORGE_BIN}" inspect --root contracts src/ResurrectRegistryV1.sol:ResurrectRegistryV1 methodIdentifiers --json)"
 jq -e 'keys | sort == ["MAX_RECORD_BYTES()", "MAX_TTL()", "VERSION()", "announce(bytes32,uint32,uint32,bytes)"]' \
   <<<"${METHODS_JSON}" >/dev/null
 
-NAMESPACE="$("${CAST_BIN}" keccak 'rbp:ci-checklist:1')"
+NAMESPACE="$("${CAST_BIN}" keccak 'resurrect:ci-checklist:1')"
 DESCRIPTOR="${WORK_DIRECTORY}/descriptor.json"
 write_descriptor "${DESCRIPTOR}" "${NAMESPACE}"
 jq -e 'has("rpcUrl") | not' "${DESCRIPTOR}" >/dev/null
@@ -185,7 +185,7 @@ wait_for_status "${WORK_DIRECTORY}/a.json" '.registry.announcements >= 1 and .co
 
 # B has no cache, native discovery, DNS seed, or knowledge of A.
 start_node b 42002 "${DESCRIPTOR}" "${RPC_URL}" false false
-wait_for_status "${WORK_DIRECTORY}/b.json" '.state == "CONNECTED" and .connectedPeers >= 1 and .connectedVia == "RBP_SCAN" and .registry.scans >= 1' 'node B registry bootstrap'
+wait_for_status "${WORK_DIRECTORY}/b.json" '.state == "CONNECTED" and .connectedPeers >= 1 and .connectedVia == "RESURRECT_SCAN" and .registry.scans >= 1' 'node B registry bootstrap'
 
 # Restart the formed component, then make C join through a configured native
 # libp2p peer while registry RPC is unavailable. C must never scan Ethereum.
@@ -205,12 +205,12 @@ stop_nodes
 start_node d 42004 "${DESCRIPTOR}" "${RPC_URL}" false true "${ACCOUNT_D_KEY}"
 wait_for_status "${WORK_DIRECTORY}/d.json" '.registry.announcements >= 1' 'unrelated node D self-announcement'
 start_node e 42005 "${DESCRIPTOR}" "${RPC_URL}" false false
-wait_for_status "${WORK_DIRECTORY}/e.json" '.state == "CONNECTED" and .connectedPeers >= 1 and .connectedVia == "RBP_SCAN"' 'unrelated node E registry bootstrap'
+wait_for_status "${WORK_DIRECTORY}/e.json" '.state == "CONNECTED" and .connectedPeers >= 1 and .connectedVia == "RESURRECT_SCAN"' 'unrelated node E registry bootstrap'
 test "$(jq -r .peerId "${WORK_DIRECTORY}/a.json")" != "$(jq -r .peerId "${WORK_DIRECTORY}/d.json")"
 
 # Simultaneous reboot under a fresh arbitrary namespace.
 stop_nodes
-SIMULTANEOUS_NAMESPACE="$("${CAST_BIN}" keccak 'rbp:ci-simultaneous:1')"
+SIMULTANEOUS_NAMESPACE="$("${CAST_BIN}" keccak 'resurrect:ci-simultaneous:1')"
 SIMULTANEOUS_DESCRIPTOR="${WORK_DIRECTORY}/simultaneous.json"
 write_descriptor "${SIMULTANEOUS_DESCRIPTOR}" "${SIMULTANEOUS_NAMESPACE}"
 start_node f 42006 "${SIMULTANEOUS_DESCRIPTOR}" "${RPC_URL}" false true "${ACCOUNT_A_KEY}"
@@ -230,7 +230,7 @@ cat >artifacts/implementer-checklist.json <<JSON
   "invalidAndExpiredRecordsRejected": true,
   "recoveredEndpointDialed": true,
   "nodeASelfAnnounced": true,
-  "nodeBDiscoveredOnlyThroughRbp": true,
+  "nodeBDiscoveredOnlyThroughResurrect": true,
   "nodeCJoinedThroughNativeDiscoveryWithoutRegistry": true,
   "callerSuppliedRegistryProvider": true,
   "browserCustomAndInjectedProvidersWithoutAccounts": true,
@@ -245,4 +245,4 @@ cat >artifacts/implementer-checklist.json <<JSON
 JSON
 
 jq -e '[to_entries[] | select(.value == false)] | length == 0' artifacts/implementer-checklist.json >/dev/null
-echo "RBP implementer checklist integration passed"
+echo "Resurrect implementer checklist integration passed"

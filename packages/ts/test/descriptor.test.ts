@@ -4,13 +4,13 @@ import { deriveNamespace, parseDescriptor } from '../src/index.js'
 describe('network descriptor', () => {
   it('derives the shared namespace algorithm', () => {
     expect(deriveNamespace('example-network', 1)).toBe(
-      '0xf90b28e5c2deb8854a5a0cda7584edcca25b73bc5a45f456aaa33c1de303646e'
+      '0x80b9e2baaf4a666ec32337c351ad59485b3a43eca09a5f372e2f84b981123c88'
     )
   })
 
   it('normalizes and rejects ambiguous descriptors', () => {
     const descriptor = parseDescriptor({
-      rbpVersion: 1,
+      resurrectVersion: 1,
       registry: {
         chainId: '31337',
         address: '0x1111111111111111111111111111111111111111',
@@ -29,7 +29,7 @@ describe('network descriptor', () => {
 
   it('enforces the registry integer widths', () => {
     const base = {
-      rbpVersion: 1,
+      resurrectVersion: 1,
       registry: {
         chainId: 1,
         address: '0x1111111111111111111111111111111111111111',

@@ -145,21 +145,21 @@ jobs:
           package-manager-cache: false
       - run: scripts/set-version.sh "${{ needs.validate-release.outputs.version }}"
         shell: bash
-      - run: cargo build -p rbp-node --release --locked
+      - run: cargo build -p resurrect-node --release --locked
       - name: Archive Unix binary
         if: runner.os != 'Windows'
         shell: bash
         run: |
-          name="rbp-node-${{ needs.validate-release.outputs.version }}-${RUNNER_OS}-${RUNNER_ARCH}"
+          name="resurrect-node-${{ needs.validate-release.outputs.version }}-${RUNNER_OS}-${RUNNER_ARCH}"
           mkdir -p release-assets
-          tar -C target/release -czf "release-assets/${name}.tar.gz" rbp-node
+          tar -C target/release -czf "release-assets/${name}.tar.gz" resurrect-node
       - name: Archive Windows binary
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force release-assets | Out-Null
-          $name = "rbp-node-${{ needs.validate-release.outputs.version }}-${env:RUNNER_OS}-${env:RUNNER_ARCH}.zip"
-          Compress-Archive target/release/rbp-node.exe "release-assets/$name"
+          $name = "resurrect-node-${{ needs.validate-release.outputs.version }}-${env:RUNNER_OS}-${env:RUNNER_ARCH}.zip"
+          Compress-Archive target/release/resurrect-node.exe "release-assets/$name"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: binary-${{ runner.os }}-${{ runner.arch }}

@@ -40,7 +40,7 @@ export function injectedProvider(provider: Eip1193Provider): RegistryProvider {
 export function persistJsonRpcUrl(
   url: string,
   storage: Pick<Storage, 'setItem'>,
-  key = 'rbp.rpcUrl'
+  key = 'resurrect.rpcUrl'
 ): void {
   const parsed = new URL(url)
   if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {

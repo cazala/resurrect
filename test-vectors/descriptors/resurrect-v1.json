@@ -1,0 +1,17 @@
+{
+  "application": "example-network",
+  "majorVersion": 1,
+  "derivedNamespace": "0x80b9e2baaf4a666ec32337c351ad59485b3a43eca09a5f372e2f84b981123c88",
+  "descriptor": {
+    "acceptedRecordTypes": [2, 1],
+    "namespace": "0x80b9e2baaf4a666ec32337c351ad59485b3a43eca09a5f372e2f84b981123c88",
+    "resurrectVersion": 1,
+    "registry": {
+      "maxTtlSeconds": 7776000,
+      "deploymentBlock": 42,
+      "address": "0x1111111111111111111111111111111111111111",
+      "chainId": 1
+    }
+  },
+  "canonicalJson": "{\"resurrectVersion\":1,\"registry\":{\"chainId\":1,\"address\":\"0x1111111111111111111111111111111111111111\",\"deploymentBlock\":42,\"maxTtlSeconds\":7776000},\"namespace\":\"0x80b9e2baaf4a666ec32337c351ad59485b3a43eca09a5f372e2f84b981123c88\",\"acceptedRecordTypes\":[1,2]}"
+}

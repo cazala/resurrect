@@ -1,4 +1,4 @@
-# RBP documentation
+# Resurrect documentation
 
 The normative protocol is [spec.md](spec.md). Other documents explain this repository's reference implementation and do not override the specification.
 

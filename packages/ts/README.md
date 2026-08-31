@@ -1,13 +1,13 @@
-# `@rbp-protocol/client`
+# `@resurrect-protocol/client`
 
-Browser/static RBP v1 registry discovery with caller-supplied JSON-RPC or EIP-1193 providers. The package verifies descriptors, provider chain and contract constants, recent registry logs, standard libp2p Signed Envelopes, peer identity, record sequence, expiry, and secure browser endpoint policy.
+Browser/static Resurrect v1 registry discovery with caller-supplied JSON-RPC or EIP-1193 providers. The package verifies descriptors, provider chain and contract constants, recent registry logs, standard libp2p Signed Envelopes, peer identity, record sequence, expiry, and secure browser endpoint policy.
 
 It does not request wallet accounts, ship a mandatory RPC hostname, persist URLs automatically, dial a transport, or authenticate your application protocol.
 
 ## Install
 
 ```bash
-npm install @rbp-protocol/client
+npm install @resurrect-protocol/client
 ```
 
 Node.js 22 or newer is required for the supported server-side toolchain. The emitted ESM targets modern browsers and ES2022.
@@ -16,15 +16,15 @@ Node.js 22 or newer is required for the supported server-side toolchain. The emi
 
 ```ts
 import {
-  RbpBrowserClient,
+  ResurrectBrowserClient,
   deriveNamespace,
   injectedProvider,
   jsonRpcProvider,
   parseDescriptor
-} from '@rbp-protocol/client'
+} from '@resurrect-protocol/client'
 
 const descriptor = parseDescriptor({
-  rbpVersion: 1,
+  resurrectVersion: 1,
   registry: {
     chainId: 1,
     address: '0x1111111111111111111111111111111111111111',
@@ -39,7 +39,7 @@ const provider = selectedEip1193Provider
   ? injectedProvider(selectedEip1193Provider)
   : jsonRpcProvider(userEnteredRpcUrl)
 
-const client = new RbpBrowserClient(descriptor, provider)
+const client = new ResurrectBrowserClient(descriptor, provider)
 const report = await client.scan()
 for (const candidate of report.candidates) {
   await yourAuthenticatedBrowserTransport.dial(candidate.peerId, candidate.endpoints)
@@ -89,18 +89,18 @@ The scanner binary-searches block timestamps to avoid genesis scans and automati
 
 Codec 2 records must contain at least one signed multiaddr usable by a browser: WebTransport, secure WebSocket, HTTPS, or TLS+WebSocket. A present `/p2p` component must agree with the signed identity. Private/special IP literals and plaintext native-only TCP endpoints are rejected by default.
 
-RBP discovery is not application authorization. After dialing, authenticate the expected transport peer and perform your application's normal version/capability/membership handshake.
+Resurrect discovery is not application authorization. After dialing, authenticate the expected transport peer and perform your application's normal version/capability/membership handshake.
 
 ## Public API
 
 - `parseDescriptor`, `parseDescriptorJson`, `deriveNamespace`
 - `jsonRpcProvider`, `injectedProvider`, `persistJsonRpcUrl`
-- `RbpBrowserClient`, `scanRegistry`, `verifyProvider`
+- `ResurrectBrowserClient`, `scanRegistry`, `verifyProvider`
 - `decodeBrowserPeerRecord`
 - TypeScript interfaces for descriptors, providers, scan options/reports, and candidates
 
 ## Security
 
-RPC results and registry events are untrusted. Keep log, candidate, endpoint, and dial limits bounded. Permit provider replacement. Do not infer trust from the transaction sender or registry ordering. See the repository [security model](https://github.com/cazala/rbp/blob/main/docs/security.md) and specification for the complete threat model.
+RPC results and registry events are untrusted. Keep log, candidate, endpoint, and dial limits bounded. Permit provider replacement. Do not infer trust from the transaction sender or registry ordering. See the repository [security model](https://github.com/cazala/resurrect/blob/main/docs/security.md) and specification for the complete threat model.
 
 Licensed under [MIT](https://opensource.org/license/mit) or [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0) at your option.

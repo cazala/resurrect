@@ -19,26 +19,26 @@ Never commit payer or identity keys. Prefer a dedicated payer account with only 
 ## Starting a light node
 
 ```bash
-rbp-node \
-  --descriptor /etc/rbp/network.json \
+resurrect-node \
+  --descriptor /etc/resurrect/network.json \
   --rpc-url https://caller-selected-rpc.example \
-  --identity /var/lib/rbp/identity.key \
-  --cache /var/lib/rbp/peers.sqlite3 \
+  --identity /var/lib/resurrect/identity.key \
+  --cache /var/lib/resurrect/peers.sqlite3 \
   --listen /ip4/0.0.0.0/tcp/4001 \
-  --status-file /run/rbp/status.json
+  --status-file /run/resurrect/status.json
 ```
 
-The node first tries its verified cache and native observations from configured peers, mDNS, and identify. It touches the provider only when RBP discovery becomes necessary. An unreachable RPC therefore does not prevent a healthy native component from accepting or finding peers. Supply a repeatable `--native-peer /dns4/seed.example/tcp/4001/p2p/<peer-id>` when deterministic native bootstrap is preferable to multicast discovery; the Noise handshake authenticates the configured peer ID.
+The node first tries its verified cache and native observations from configured peers, mDNS, and identify. It touches the provider only when Resurrect discovery becomes necessary. An unreachable RPC therefore does not prevent a healthy native component from accepting or finding peers. Supply a repeatable `--native-peer /dns4/seed.example/tcp/4001/p2p/<peer-id>` when deterministic native bootstrap is preferable to multicast discovery; the Noise handshake authenticates the configured peer ID.
 
 ## Starting a seed
 
 ```bash
-export RBP_ETHEREUM_PRIVATE_KEY=0x...
-rbp-node \
-  --descriptor /etc/rbp/network.json \
+export RESURRECT_ETHEREUM_PRIVATE_KEY=0x...
+resurrect-node \
+  --descriptor /etc/resurrect/network.json \
   --rpc-url https://caller-selected-rpc.example \
-  --identity /var/lib/rbp/identity.key \
-  --cache /var/lib/rbp/peers.sqlite3 \
+  --identity /var/lib/resurrect/identity.key \
+  --cache /var/lib/resurrect/peers.sqlite3 \
   --seed \
   --listen /ip4/0.0.0.0/tcp/4001 \
   --advertise /dns4/seed.example/tcp/4001

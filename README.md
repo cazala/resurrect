@@ -1,6 +1,6 @@
-# Rebootable Bootstrap Protocol
+# Resurrect
 
-RBP v1 is a permissionless cold-start and network-resurrection layer for peer-to-peer applications. It lets a network recover after every application node and every operator-controlled bootstrap service has disappeared, provided its configured EVM chain remains readable and writable.
+Resurrect v1 is a permissionless cold-start and network-resurrection layer for peer-to-peer applications. It lets a network recover after every application node and every operator-controlled bootstrap service has disappeared, provided its configured EVM chain remains readable and writable.
 
 The repository contains a complete reference implementation of [`docs/spec.md`](docs/spec.md):
 
@@ -12,12 +12,12 @@ The repository contains a complete reference implementation of [`docs/spec.md`](
 - deterministic cross-language vectors; and
 - unit, fuzz, invariant, fork, reboot, simultaneous-reboot, and packaging tests.
 
-RBP is discovery, not trust. Every registry event is attacker-controlled input until the embedded peer record is cryptographically verified and accepted by local endpoint and application policy.
+Resurrect is discovery, not trust. Every registry event is attacker-controlled input until the embedded peer record is cryptographically verified and accepted by local endpoint and application policy.
 
 ## How it works
 
 ```text
-cache → native discovery → recent RBP events → self-announce if eligible → retry
+cache → native discovery → recent Resurrect events → self-announce if eligible → retry
                                 │
                                 └─ verify signature, identity, sequence,
                                    expiry, codec, namespace, and endpoints
@@ -25,19 +25,19 @@ cache → native discovery → recent RBP events → self-announce if eligible �
 
 The onchain contract stores no peer list. Anyone can emit a bounded announcement under any namespace. A client scans only the block window that can contain unexpired events, validates signed peer records, and dials a bounded candidate set. Once native connectivity exists, the registry leaves the hot path.
 
-RBP does not recover lost application data, define application membership, prove endpoint reachability, provide NAT traversal, or replace a DHT, peer exchange, pub/sub, consensus, or application handshake.
+Resurrect does not recover lost application data, define application membership, prove endpoint reachability, provide NAT traversal, or replace a DHT, peer exchange, pub/sub, consensus, or application handshake.
 
 ## Repository map
 
 | Path | Purpose | Release artifact |
 |---|---|---|
-| `contracts/` | Canonical Foundry project and registry tests | source via `@rbp-protocol/contracts` |
-| `crates/rbp-core` | descriptors, namespaces, validation, bounded candidates | `rbp-core` |
-| `crates/rbp-ethereum` | Alloy provider, scanner, publisher ABI | `rbp-ethereum` |
-| `crates/rbp-libp2p` | EIP-778 ENR and libp2p signed-record codecs | `rbp-libp2p` |
-| `crates/rbp-node` | native libp2p host, SQLite cache, supervisor, CLI | `rbp-node` crate and binaries |
-| `packages/ts` | browser/static provider and registry scanner | `@rbp-protocol/client` |
-| `packages/contracts` | canonical Solidity source and ABI | `@rbp-protocol/contracts` |
+| `contracts/` | Canonical Foundry project and registry tests | source via `@resurrect-protocol/contracts` |
+| `crates/resurrect-core` | descriptors, namespaces, validation, bounded candidates | `resurrect-core` |
+| `crates/resurrect-ethereum` | Alloy provider, scanner, publisher ABI | `resurrect-ethereum` |
+| `crates/resurrect-libp2p` | EIP-778 ENR and libp2p signed-record codecs | `resurrect-libp2p` |
+| `crates/resurrect-node` | native libp2p host, SQLite cache, supervisor, CLI | `resurrect-node` crate and binaries |
+| `packages/ts` | browser/static provider and registry scanner | `@resurrect-protocol/client` |
+| `packages/contracts` | canonical Solidity source and ABI | `@resurrect-protocol/contracts` |
 | `test-vectors/` | deterministic Rust/TypeScript interoperability data | repository data |
 | `scripts/` | conformance, packaging, and release automation | CI tooling |
 
@@ -51,7 +51,7 @@ Development uses:
 - pnpm 11.17; and
 - `jq` for the end-to-end checklist test.
 
-The native `rbp-node` binary has no Node.js runtime dependency.
+The native `resurrect-node` binary has no Node.js runtime dependency.
 
 ## Build and test
 
@@ -72,7 +72,7 @@ Run the full implementer-checklist integration test with Anvil:
 scripts/checklist-integration.sh
 ```
 
-It deploys a fresh registry and proves empty-network self-promotion, RBP-only discovery, authenticated libp2p dialing, native discovery without registry access, total shutdown and unrelated-operator reboot, and simultaneous reboot. The machine-readable result is written to `artifacts/implementer-checklist.json`.
+It deploys a fresh registry and proves empty-network self-promotion, Resurrect-only discovery, authenticated libp2p dialing, native discovery without registry access, total shutdown and unrelated-operator reboot, and simultaneous reboot. The machine-readable result is written to `artifacts/implementer-checklist.json`.
 
 See [Testing](docs/testing.md) for suite boundaries and [Conformance](docs/conformance.md) for the checklist mapping.
 
@@ -82,7 +82,7 @@ Every application pins the chain, immutable registry, deployment block, namespac
 
 ```json
 {
-  "rbpVersion": 1,
+  "resurrectVersion": 1,
   "registry": {
     "chainId": 1,
     "address": "0x1111111111111111111111111111111111111111",
@@ -94,7 +94,7 @@ Every application pins the chain, immutable registry, deployment block, namespac
 }
 ```
 
-The JSON schema is intentionally closed: unknown fields are rejected. It never contains an RPC hostname. Applications derive a namespace with `keccak256("rbp:<application>:<major-version>")` and distribute the descriptor as ordinary versioned application configuration.
+The JSON schema is intentionally closed: unknown fields are rejected. It never contains an RPC hostname. Applications derive a namespace with `keccak256("resurrect:<application>:<major-version>")` and distribute the descriptor as ordinary versioned application configuration.
 
 No canonical production registry is asserted by this repository. See [Deployments](docs/deployments.md).
 
@@ -103,14 +103,14 @@ No canonical production registry is asserted by this repository. See [Deployment
 Build the process:
 
 ```bash
-cargo build -p rbp-node --release --locked
+cargo build -p resurrect-node --release --locked
 ```
 
 Run a read-only light node with a caller-selected RPC endpoint:
 
 ```bash
-target/release/rbp-node \
-  --descriptor ./network.rbp.json \
+target/release/resurrect-node \
+  --descriptor ./network.resurrect.json \
   --rpc-url https://your-registry-chain-rpc.example \
   --listen /ip4/0.0.0.0/tcp/4001
 ```
@@ -118,9 +118,9 @@ target/release/rbp-node \
 Run a publicly reachable seed:
 
 ```bash
-export RBP_ETHEREUM_PRIVATE_KEY=0x...
-target/release/rbp-node \
-  --descriptor ./network.rbp.json \
+export RESURRECT_ETHEREUM_PRIVATE_KEY=0x...
+target/release/resurrect-node \
+  --descriptor ./network.resurrect.json \
   --rpc-url https://your-registry-chain-rpc.example \
   --seed \
   --listen /ip4/0.0.0.0/tcp/4001 \
@@ -131,7 +131,7 @@ Seed mode requires an Ethereum signing key and at least one explicitly advertise
 
 The process writes no mandatory hosted API and needs no DNS name when an IP multiaddr is usable. `--status-file` enables an atomically replaced local JSON health snapshot. Use `--allow-unfinalized` only for development chains whose `safe` or `finalized` tag does not progress.
 
-For deterministic native bootstrap without multicast, repeat `--native-peer` with a peer-ID-qualified multiaddr such as `/dns4/seed.example/tcp/4001/p2p/<peer-id>`. Configured peers, mDNS, and identify are attempted before RBP.
+For deterministic native bootstrap without multicast, repeat `--native-peer` with a peer-ID-qualified multiaddr such as `/dns4/seed.example/tcp/4001/p2p/<peer-id>`. Configured peers, mDNS, and identify are attempted before Resurrect.
 
 Operational details are in [Node operations](docs/node-operations.md).
 
@@ -139,9 +139,9 @@ Operational details are in [Node operations](docs/node-operations.md).
 
 ```toml
 [dependencies]
-rbp-core = "0.1"
-rbp-ethereum = "0.1"
-rbp-libp2p = "0.1"
+resurrect-core = "0.1"
+resurrect-ethereum = "0.1"
+resurrect-libp2p = "0.1"
 ```
 
 The main abstractions accept caller-owned providers, codecs, discovery sources, native peer stores, connectors, and publishers. Applications can use the scanner/codecs without adopting the reference CLI or SQLite cache. See [Application integration](docs/application-integration.md).
@@ -149,23 +149,23 @@ The main abstractions accept caller-owned providers, codecs, discovery sources, 
 ## Use the browser/static client
 
 ```bash
-pnpm add @rbp-protocol/client
+pnpm add @resurrect-protocol/client
 ```
 
 ```ts
 import {
-  RbpBrowserClient,
+  ResurrectBrowserClient,
   injectedProvider,
   jsonRpcProvider,
   parseDescriptor
-} from '@rbp-protocol/client'
+} from '@resurrect-protocol/client'
 
 const descriptor = parseDescriptor(applicationDescriptor)
 const provider = window.ethereum
   ? injectedProvider(window.ethereum)
   : jsonRpcProvider(userEnteredRpcUrl)
 
-const client = new RbpBrowserClient(descriptor, provider)
+const client = new ResurrectBrowserClient(descriptor, provider)
 const { candidates } = await client.scan()
 ```
 
@@ -175,9 +175,9 @@ The package returns signed, validated dial candidates; the host application stil
 
 ## Contract
 
-`RBPRegistryV1` has exactly four public function selectors: `VERSION()`, `MAX_TTL()`, `MAX_RECORD_BYTES()`, and `announce(bytes32,uint32,uint32,bytes)`. It has no owner, storage-backed peer set, upgrade, pause, allowlist, withdrawal, or namespace administrator.
+`ResurrectRegistryV1` has exactly four public function selectors: `VERSION()`, `MAX_TTL()`, `MAX_RECORD_BYTES()`, and `announce(bytes32,uint32,uint32,bytes)`. It has no owner, storage-backed peer set, upgrade, pause, allowlist, withdrawal, or namespace administrator.
 
-The canonical source is [`contracts/src/RBPRegistryV1.sol`](contracts/src/RBPRegistryV1.sol). CI requires its npm package mirror to be byte-for-byte identical. Deployers should independently compile, verify, and pin the resulting address and deployment block.
+The canonical source is [`contracts/src/ResurrectRegistryV1.sol`](contracts/src/ResurrectRegistryV1.sol). CI requires its npm package mirror to be byte-for-byte identical. Deployers should independently compile, verify, and pin the resulting address and deployment block.
 
 ## Security
 

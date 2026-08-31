@@ -2,7 +2,7 @@
 
 ## Design boundary
 
-RBP supplies signed candidate endpoints only. Ethereum establishes event availability and ordering; it does not attest to peer quality, application membership, reachability, or honesty. The peer-record signature establishes control of the embedded peer identity and signed addresses; it does not establish application authorization. The application's normal cryptographic handshake remains mandatory.
+Resurrect supplies signed candidate endpoints only. Ethereum establishes event availability and ordering; it does not attest to peer quality, application membership, reachability, or honesty. The peer-record signature establishes control of the embedded peer identity and signed addresses; it does not establish application authorization. The application's normal cryptographic handshake remains mandatory.
 
 ## Components
 
@@ -32,7 +32,7 @@ application descriptor
               application handshake
 ```
 
-The Rust workspace separates protocol primitives (`rbp-core`), EVM access (`rbp-ethereum`), codecs (`rbp-libp2p`), and an opinionated runnable composition (`rbp-node`). The TypeScript package independently implements the browser-safe subset and verifies deterministic signed-record vectors shared with Rust.
+The Rust workspace separates protocol primitives (`resurrect-core`), EVM access (`resurrect-ethereum`), codecs (`resurrect-libp2p`), and an opinionated runnable composition (`resurrect-node`). The TypeScript package independently implements the browser-safe subset and verifies deterministic signed-record vectors shared with Rust.
 
 ## Startup state machine
 
@@ -51,7 +51,7 @@ Healthy nodes do not continuously scan Ethereum. Seeds renew their announcement 
 
 The registry has no storage variables and exposes only three constants plus `announce`. The event expiry is calculated from the block timestamp. Contract tests prove boundary reverts, permissionless access, no common admin selectors, no writes across sampled storage slots, fuzzed valid inputs, and invariant stability.
 
-The authoritative source is `contracts/src/RBPRegistryV1.sol`. The npm source mirror must compare byte-for-byte in CI.
+The authoritative source is `contracts/src/ResurrectRegistryV1.sol`. The npm source mirror must compare byte-for-byte in CI.
 
 ## Provider and scanner model
 
@@ -80,4 +80,4 @@ The native libp2p identity is durable and security-sensitive. The Ethereum payer
 
 ## Liveness assumptions
 
-Total resurrection requires at least one compatible participant able to reach and pay the configured EVM chain, followed by another participant able to dial its advertised transport. Existing native components can continue when the registry or RPC is unavailable. RBP cannot reconstruct application data that no participant retained.
+Total resurrection requires at least one compatible participant able to reach and pay the configured EVM chain, followed by another participant able to dial its advertised transport. Existing native components can continue when the registry or RPC is unavailable. Resurrect cannot reconstruct application data that no participant retained.

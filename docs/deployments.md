@@ -1,6 +1,6 @@
 # Registry deployments
 
-This repository does not claim a canonical production RBPRegistryV1 address. Applications choose and verify their own immutable deployment, then pin it in their descriptor. Publishing an address here without independent verification would create exactly the operator dependency RBP is designed to avoid.
+This repository does not claim a canonical production ResurrectRegistryV1 address. Applications choose and verify their own immutable deployment, then pin it in their descriptor. Publishing an address here without independent verification would create exactly the operator dependency Resurrect is designed to avoid.
 
 ## Deploy locally
 
@@ -8,7 +8,7 @@ This repository does not claim a canonical production RBPRegistryV1 address. App
 anvil --chain-id 31337
 forge create \
   --root contracts \
-  src/RBPRegistryV1.sol:RBPRegistryV1 \
+  src/ResurrectRegistryV1.sol:ResurrectRegistryV1 \
   --rpc-url http://127.0.0.1:8545 \
   --private-key 0x... \
   --broadcast
@@ -19,7 +19,7 @@ Record the chain ID, deployed address, and receipt block. The deployer has no sp
 ## Production verification procedure
 
 1. Choose an EVM chain whose longevity, availability, finality, censorship resistance, cost, and RPC ecosystem fit the application's recovery assumptions.
-2. Build the exact tagged `contracts/src/RBPRegistryV1.sol` with the pinned Solidity/Foundry settings.
+2. Build the exact tagged `contracts/src/ResurrectRegistryV1.sol` with the pinned Solidity/Foundry settings.
 3. Review the creation and runtime bytecode and publish verified source through the chain's normal explorer tooling.
 4. Confirm `VERSION() == 1`, `MAX_TTL() == 7776000`, and `MAX_RECORD_BYTES() == 4096`.
 5. Confirm the only callable function selectors are the three constants and `announce(bytes32,uint32,uint32,bytes)`.
@@ -33,7 +33,7 @@ Do not add a proxy, owner, pause, allowlist, fee withdrawal, mutable namespace m
 
 ```json
 {
-  "rbpVersion": 1,
+  "resurrectVersion": 1,
   "registry": {
     "chainId": "1",
     "address": "0x1111111111111111111111111111111111111111",

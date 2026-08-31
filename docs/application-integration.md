@@ -2,7 +2,7 @@
 
 ## Define the application profile
 
-An application adopting RBP must decide and document:
+An application adopting Resurrect must decide and document:
 
 - its stable application identifier and major protocol version;
 - the derived namespace;
@@ -13,7 +13,7 @@ An application adopting RBP must decide and document:
 - connection target, dial limits, timeouts, cache policy, and seed eligibility; and
 - how users replace or supply registry-chain providers.
 
-Derive the namespace as `keccak256(UTF8("rbp:<application>:<major>"))`. Change the major component when versions cannot safely share the same overlay. Do not derive it from a maintainer domain that may disappear.
+Derive the namespace as `keccak256(UTF8("resurrect:<application>:<major>"))`. Change the major component when versions cannot safely share the same overlay. Do not derive it from a maintainer domain that may disappear.
 
 ## Distribute a descriptor
 
@@ -25,10 +25,10 @@ Use JSON integers within the safe-integer range for the portable descriptor form
 
 Applications can consume the released crates independently:
 
-- `rbp-core` for descriptors, namespace derivation, codec registration, validation, and candidate bounds;
-- `rbp-ethereum` for the provider abstraction, Alloy HTTP adapter, scanner, and generated contract calls;
-- `rbp-libp2p` for ENR and libp2p Signed Envelope verification; and
-- `rbp-node` for reusable bootstrap traits, SQLite cache, native libp2p host, announcer, and supervisor.
+- `resurrect-core` for descriptors, namespace derivation, codec registration, validation, and candidate bounds;
+- `resurrect-ethereum` for the provider abstraction, Alloy HTTP adapter, scanner, and generated contract calls;
+- `resurrect-libp2p` for ENR and libp2p Signed Envelope verification; and
+- `resurrect-node` for reusable bootstrap traits, SQLite cache, native libp2p host, announcer, and supervisor.
 
 The bootstrap controller depends on `DiscoverySource`, `NativeDiscovery`, `PeerConnector`, and `AnnouncementPublisher`. An application may implement these traits around its existing DHT, discv5, peer exchange, transport, or metrics system. It should pass registry-validated peers into its ordinary peer store and return to native discovery after connectivity forms.
 

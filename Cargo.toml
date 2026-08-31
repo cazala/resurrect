@@ -1,9 +1,9 @@
 [workspace]
 members = [
-  "crates/rbp-core",
-  "crates/rbp-ethereum",
-  "crates/rbp-libp2p",
-  "crates/rbp-node",
+  "crates/resurrect-core",
+  "crates/resurrect-ethereum",
+  "crates/resurrect-libp2p",
+  "crates/resurrect-node",
 ]
 resolver = "2"
 
@@ -11,10 +11,10 @@ resolver = "2"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.91"
-authors = ["RBP contributors"]
+authors = ["Resurrect contributors"]
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/cazala/rbp"
-homepage = "https://github.com/cazala/rbp"
+repository = "https://github.com/cazala/resurrect"
+homepage = "https://github.com/cazala/resurrect"
 readme = "README.md"
 
 [workspace.dependencies]

@@ -4,9 +4,9 @@
 
 Every artifact that can be independently consumed is published:
 
-- crates.io: `rbp-core`, `rbp-libp2p`, `rbp-ethereum`, `rbp-node`;
-- npm: `@rbp-protocol/contracts`, `@rbp-protocol/client`; and
-- GitHub Release: `rbp-node` binaries for Linux, macOS, and Windows, SHA-256 checksums, and attestations.
+- crates.io: `resurrect-core`, `resurrect-libp2p`, `resurrect-ethereum`, `resurrect-node`;
+- npm: `@resurrect-protocol/contracts`, `@resurrect-protocol/client`; and
+- GitHub Release: `resurrect-node` binaries for Linux, macOS, and Windows, SHA-256 checksums, and attestations.
 
 The canonical Solidity source and ABI are distributed by npm rather than a separate contract binary channel.
 
@@ -31,9 +31,9 @@ Do not point a release tag at unreviewed or failing code. GitHub Release publica
 Create a GitHub Environment named `package-publishing`; environment reviewers are recommended for stable releases. Configure:
 
 - `CARGO_REGISTRY_TOKEN` as an environment or repository secret with permission to publish all four crates.
-- npm trusted publishers for both scoped packages, restricted to this repository, workflow file `.github/workflows/publish.yml`, and environment `package-publishing`.
+- npm trusted publishers for both scoped packages, restricted to this repository, workflow filename `publish.yml`, and environment `package-publishing`.
 
-The publishing identities must own or be allowed to create the `rbp-*` crate names and the `@rbp-protocol` npm scope. Confirm those names before enabling the first main publication; if any name is already controlled by another party, rename all manifests and documentation coherently rather than publishing through an unrelated owner.
+The publishing identities must own or be allowed to create the `resurrect-*` crate names and the `@resurrect-protocol` npm scope. Confirm those names before enabling the first main publication; if any name is already controlled by another party, rename all manifests and documentation coherently rather than publishing through an unrelated owner.
 
 The workflow has `id-token: write` and requests npm provenance. With trusted publishing configured, `NPM_TOKEN` should be omitted. If either npm package does not yet exist and npm cannot attach a trusted publisher before first publication, perform the one-time initial publish with a granular `NPM_TOKEN`, then configure trusted publishing and remove the token.
 

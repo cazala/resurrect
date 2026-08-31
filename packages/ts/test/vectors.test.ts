@@ -1,6 +1,6 @@
 import { decodeEventLog, parseAbi, type Hex } from 'viem'
 import { describe, expect, it } from 'vitest'
-import descriptorVector from '../../../test-vectors/descriptors/rbp-v1.json' with { type: 'json' }
+import descriptorVector from '../../../test-vectors/descriptors/resurrect-v1.json' with { type: 'json' }
 import eventVector from '../../../test-vectors/registry-events/peer-announced-v1.json' with { type: 'json' }
 import { deriveNamespace, parseDescriptor } from '../src/index.js'
 

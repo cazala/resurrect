@@ -34,13 +34,13 @@ Assume an attacker can publish unlimited syntactically valid or malformed events
 
 ## Residual risks
 
-RBP cannot prevent a well-funded Sybil/eclipsing population, prove liveness before dialing, guarantee RPC completeness, route around EVM censorship, hide public seed endpoints, recover deleted application data, or fix a vulnerable application handshake. One available attacker-controlled peer may be the only discoverable candidate.
+Resurrect cannot prevent a well-funded Sybil/eclipsing population, prove liveness before dialing, guarantee RPC completeness, route around EVM censorship, hide public seed endpoints, recover deleted application data, or fix a vulnerable application handshake. One available attacker-controlled peer may be the only discoverable candidate.
 
 Applications should diversify discovery sources and network prefixes, remember successful peers, rotate samples, compare providers when appropriate, and enforce authorization after transport connection. High-value deployments should operate or verify against their own Ethereum node.
 
 ## Key handling
 
-The native identity key authenticates the peer record and transport. Protect it like a service identity. The Ethereum key only pays for `announce`; use a separate account, a limited balance, and a secret manager. Compromise of the payer cannot impersonate an uncompromised peer, but it can spend funds and publish spam. Compromise of the peer key permits signed endpoint impersonation until applications revoke or reject that identity through mechanisms outside RBP.
+The native identity key authenticates the peer record and transport. Protect it like a service identity. The Ethereum key only pays for `announce`; use a separate account, a limited balance, and a secret manager. Compromise of the payer cannot impersonate an uncompromised peer, but it can spend funds and publish spam. Compromise of the peer key permits signed endpoint impersonation until applications revoke or reject that identity through mechanisms outside Resurrect.
 
 ## SSRF and egress
 

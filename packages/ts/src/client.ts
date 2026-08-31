@@ -1,7 +1,7 @@
 import { scanRegistry, verifyProvider } from './scanner.js'
 import type { NetworkDescriptor, RegistryProvider, ScanOptions, ScanReport } from './types.js'
 
-export class RbpBrowserClient {
+export class ResurrectBrowserClient {
   readonly descriptor: NetworkDescriptor
   #provider: RegistryProvider
 

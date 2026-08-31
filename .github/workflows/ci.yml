@@ -36,7 +36,7 @@ jobs:
       - run: forge fmt --root contracts --check
       - run: FOUNDRY_PROFILE=ci forge test --root contracts -vv
       - run: forge build --root contracts --sizes
-      - run: cmp contracts/src/RBPRegistryV1.sol packages/contracts/src/RBPRegistryV1.sol
+      - run: cmp contracts/src/ResurrectRegistryV1.sol packages/contracts/src/ResurrectRegistryV1.sol
 
   browser:
     strategy:
@@ -53,9 +53,9 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @rbp-protocol/client check
-      - run: pnpm --filter @rbp-protocol/client build
-      - run: pnpm --filter @rbp-protocol/client test
+      - run: pnpm --filter @resurrect-protocol/client check
+      - run: pnpm --filter @resurrect-protocol/client build
+      - run: pnpm --filter @resurrect-protocol/client test
       - run: pnpm --dir packages/contracts test
 
   packages:
@@ -85,7 +85,7 @@ jobs:
       - name: Run optional real-state fork suite
         env:
           MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
-        run: forge test --root contracts --match-contract RBPRegistryV1ForkTest -vv
+        run: forge test --root contracts --match-contract ResurrectRegistryV1ForkTest -vv
 
   implementer-checklist:
     needs: [rust, contracts, browser, packages]

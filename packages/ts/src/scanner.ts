@@ -151,7 +151,7 @@ export async function verifyProvider(provider: RegistryProvider, descriptor: Net
     readConstant(provider, descriptor.registry.address, 'MAX_RECORD_BYTES')
   ])
   if (version !== 1n || maxTtl !== 7_776_000n || maxRecord !== 4096n || maxTtl !== BigInt(descriptor.registry.maxTtlSeconds)) {
-    throw new Error('deployed registry constants do not match RBP v1')
+    throw new Error('deployed registry constants do not match Resurrect v1')
   }
 }
 

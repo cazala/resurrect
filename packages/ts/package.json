@@ -1,15 +1,15 @@
 {
-  "name": "@rbp-protocol/client",
+  "name": "@resurrect-protocol/client",
   "version": "0.1.0",
-  "description": "Browser and static-client implementation of Rebootable Bootstrap Protocol v1",
+  "description": "Browser and static-client implementation of Resurrect v1",
   "type": "module",
   "license": "MIT OR Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/cazala/rbp.git",
+    "url": "git+https://github.com/cazala/resurrect.git",
     "directory": "packages/ts"
   },
-  "homepage": "https://github.com/cazala/rbp",
+  "homepage": "https://github.com/cazala/resurrect",
   "sideEffects": false,
   "exports": {
     ".": {
