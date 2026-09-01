@@ -39,7 +39,7 @@ The workflow has `id-token: write` and requests npm provenance. With trusted pub
 
 Optional `MAINNET_RPC_URL` enables the real-state fork suite. It is not required for local EVM, unit, integration, packaging, or release tests; without it the fork test returns early.
 
-GitHub's built-in token supplies release upload and attestation permissions. No contract deployer key, production RPC URL, libp2p identity, hosted API key, DNS credential, or Ethereum announcement key is needed by CI.
+GitHub's built-in token supplies release upload and attestation permissions. The asset job passes `GITHUB_REPOSITORY` to `gh release upload` explicitly because it intentionally does not check out source or rely on local Git metadata. No contract deployer key, production RPC URL, libp2p identity, hosted API key, DNS credential, or Ethereum announcement key is needed by CI.
 
 Every third-party GitHub Action is pinned to a verified commit SHA. Update those pins deliberately after reviewing upstream release notes and resolving the corresponding signed major-version tag.
 
