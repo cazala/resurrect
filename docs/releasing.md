@@ -20,6 +20,8 @@ After CI succeeds for a `main` commit, `publish.yml` checks out the exact tested
 
 It publishes all Rust crates with that prerelease version and both npm packages under the `next` dist-tag. A rerun cannot collide with the first attempt. The workflow publishes dependency crates in topological order and retries while crates.io indexes propagate.
 
+npm scans every accepted upload before making it installable. The release script therefore polls the public registry for up to 20 minutes after each npm upload and fails if the exact version never becomes available under the requested dist-tag. Upload acceptance alone is not treated as publication success. The same availability gate protects stable releases.
+
 ## Stable releases
 
 Create and publish a GitHub Release whose tag is exactly `vMAJOR.MINOR.PATCH`. The workflow rejects other tag forms, checks out that tag, applies the exact tag version to every manifest/dependency, reruns Rust, Foundry, npm, packaging, and full implementer-checklist tests, then publishes crates and npm packages under `latest`. Native artifacts use the same version in their filenames.
@@ -70,6 +72,6 @@ Publication mutates manifests only in the ephemeral CI checkout. Release version
 
 Registry publication is not transactional. The publishing script queries each registry for the exact version before every upload, skips versions that already exist, and rechecks after an upload command fails in case the registry accepted the artifact but the response was lost. It is therefore safe to rerun the same workflow attempt after a partial publication.
 
-The recovery checks are covered by `scripts/publish-packages.test.sh` in CI. They deliberately simulate both an artifact that existed before the run and an artifact that became visible after a failed publish command.
+The recovery checks are covered by `scripts/publish-packages.test.sh` in CI. They deliberately simulate an artifact that existed before the run, an artifact that became visible after a failed publish command, delayed npm scan visibility, and a scan delay that exceeds the configured deadline.
 
 Already-published immutable versions are never overwritten. If a stable version contains the wrong source, publish a new patch release; never move or recreate a stable tag with different source.
