@@ -68,4 +68,8 @@ Publication mutates manifests only in the ephemeral CI checkout. Release version
 
 ## Recovery from partial publication
 
-Registry publication is not transactional. If a network failure leaves only some artifacts published, rerun the same workflow attempt only after inspecting registry state. Already-published immutable versions cannot be overwritten; use the next unique development run/attempt or a new patch release. Never retag a stable release to different source.
+Registry publication is not transactional. The publishing script queries each registry for the exact version before every upload, skips versions that already exist, and rechecks after an upload command fails in case the registry accepted the artifact but the response was lost. It is therefore safe to rerun the same workflow attempt after a partial publication.
+
+The recovery checks are covered by `scripts/publish-packages.test.sh` in CI. They deliberately simulate both an artifact that existed before the run and an artifact that became visible after a failed publish command.
+
+Already-published immutable versions are never overwritten. If a stable version contains the wrong source, publish a new patch release; never move or recreate a stable tag with different source.

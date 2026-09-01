@@ -74,6 +74,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: scripts/check-packages.sh
+      - run: scripts/publish-packages.test.sh
       - name: Verify publish-time version propagation
         run: |
           base_version="$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -1)"
