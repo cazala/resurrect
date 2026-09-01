@@ -53,6 +53,8 @@ The registry has no storage variables and exposes only three constants plus `ann
 
 The authoritative source is `contracts/src/ResurrectRegistryV1.sol`. The npm source mirror must compare byte-for-byte in CI.
 
+The reference packages pin an Ethereum mainnet instance of that bytecode at `0x6F33c332e8251dcd307D85A27fCcAbd85d578910`, deployment block `25882327`. This removes repeated deployment work without changing the boundary above: namespace, provider, signed identity, candidate policy, and application authorization remain outside the registry.
+
 ## Provider and scanner model
 
 `RegistryProvider` is a caller-supplied async abstraction. The Alloy adapter is one implementation; tests use deterministic providers. Before accepting logs the scanner checks:

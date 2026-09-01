@@ -5,7 +5,7 @@ use anyhow::{Context, Result, bail};
 use clap::{Parser, ValueEnum};
 use libp2p::Multiaddr;
 use resurrect_core::{
-    CodecRegistry, DEFAULT_MAX_ENDPOINTS_PER_RECORD, DialContext, NetworkDescriptor,
+    CodecRegistry, DEFAULT_MAX_ENDPOINTS_PER_RECORD, DialContext, Namespace, NetworkDescriptor,
     RECORD_TYPE_ENR, RECORD_TYPE_LIBP2P,
 };
 use resurrect_ethereum::{AlloyRegistryProvider, RegistryProvider, ScannerConfig};
@@ -29,9 +29,23 @@ enum LogFormat {
 #[command(version, about)]
 #[allow(clippy::struct_excessive_bools)]
 struct Cli {
-    /// Canonical Resurrect network descriptor JSON file.
-    #[arg(long)]
-    descriptor: PathBuf,
+    /// Application-owned Resurrect network descriptor JSON file.
+    #[arg(
+        long,
+        value_name = "PATH",
+        conflicts_with = "namespace",
+        required_unless_present = "namespace"
+    )]
+    descriptor: Option<PathBuf>,
+
+    /// Application namespace using the reference Ethereum mainnet registry and libp2p codec.
+    #[arg(
+        long,
+        value_name = "0xBYTES32",
+        conflicts_with = "descriptor",
+        required_unless_present = "descriptor"
+    )]
+    namespace: Option<Namespace>,
 
     /// Caller-selected Ethereum JSON-RPC endpoint.
     #[arg(long, env = "RESURRECT_RPC_URL")]
@@ -135,11 +149,7 @@ async fn main() -> Result<()> {
 
 #[allow(clippy::too_many_lines)]
 async fn run(cli: Cli) -> Result<()> {
-    let descriptor_json = tokio::fs::read_to_string(&cli.descriptor)
-        .await
-        .with_context(|| format!("could not read descriptor {}", cli.descriptor.display()))?;
-    let descriptor = NetworkDescriptor::from_json(&descriptor_json)
-        .context("network descriptor is not conforming Resurrect v1 JSON")?;
+    let descriptor = load_descriptor(&cli).await?;
     validate_cli_policy(&cli, descriptor.registry.max_ttl_seconds)?;
     let endpoint_policy = if cli.allow_private_endpoints {
         EndpointPolicy::local_testing()
@@ -266,6 +276,22 @@ async fn run(cli: Cli) -> Result<()> {
     Ok(())
 }
 
+async fn load_descriptor(cli: &Cli) -> Result<NetworkDescriptor> {
+    if let Some(path) = &cli.descriptor {
+        let descriptor_json = tokio::fs::read_to_string(path)
+            .await
+            .with_context(|| format!("could not read descriptor {}", path.display()))?;
+        return NetworkDescriptor::from_json(&descriptor_json)
+            .context("network descriptor is not conforming Resurrect v1 JSON");
+    }
+
+    let namespace = cli
+        .namespace
+        .context("either --descriptor or --namespace is required")?;
+    NetworkDescriptor::ethereum_mainnet(namespace, vec![RECORD_TYPE_LIBP2P])
+        .context("built-in Ethereum mainnet descriptor is invalid")
+}
+
 fn validate_cli_policy(cli: &Cli, maximum_ttl: u32) -> Result<()> {
     if cli.minimum_peers == 0 {
         bail!("--minimum-peers must be positive");
@@ -337,5 +363,47 @@ fn initialize_logging(format: LogFormat) {
                 .with_env_filter(filter)
                 .init();
         }
+    }
+}
+
+#[cfg(test)]
+mod cli_tests {
+    use super::*;
+
+    const NAMESPACE: &str = "0x80b9e2baaf4a666ec32337c351ad59485b3a43eca09a5f372e2f84b981123c88";
+
+    #[test]
+    fn accepts_canonical_mainnet_shortcut_with_explicit_namespace() {
+        let cli = Cli::try_parse_from([
+            "resurrect-node",
+            "--namespace",
+            NAMESPACE,
+            "--rpc-url",
+            "https://ethereum.example",
+        ])
+        .unwrap();
+
+        assert!(cli.descriptor.is_none());
+        assert_eq!(cli.namespace.unwrap().to_string(), NAMESPACE);
+    }
+
+    #[test]
+    fn requires_exactly_one_descriptor_source() {
+        assert!(
+            Cli::try_parse_from(["resurrect-node", "--rpc-url", "https://ethereum.example",])
+                .is_err()
+        );
+        assert!(
+            Cli::try_parse_from([
+                "resurrect-node",
+                "--descriptor",
+                "network.json",
+                "--namespace",
+                NAMESPACE,
+                "--rpc-url",
+                "https://ethereum.example",
+            ])
+            .is_err()
+        );
     }
 }

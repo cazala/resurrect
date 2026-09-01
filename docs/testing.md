@@ -23,14 +23,14 @@ FOUNDRY_PROFILE=ci forge test --root contracts -vv
 
 The default suite contains example, fuzz, and stateful invariant tests. The CI profile raises fuzz runs and invariant depth. Assertions cover exact constants and event expiry, every input boundary, permissionless callers, lack of admin selectors, and absence of mutable storage.
 
-The fork suite is safe to run without a credential—it skips when `MAINNET_RPC_URL` is empty. With a URL it creates a real-state fork, deploys a new registry, announces from an unrelated address, and rechecks permissionless/stateless behavior:
+The fork suite is safe to run without a credential—it skips live-state assertions when `MAINNET_RPC_URL` is empty. With a URL it creates a real-state fork, deploys a new registry, announces from an unrelated address, and rechecks permissionless/stateless behavior. It also checks the published Ethereum mainnet deployment block, runtime-bytecode hash, constants, and empty storage:
 
 ```bash
 MAINNET_RPC_URL=https://... \
   forge test --root contracts --match-contract ResurrectRegistryV1ForkTest -vv
 ```
 
-No production contract address is required because the canonical contract is self-contained and immutable.
+The RPC URL is supplied only at test time and is never embedded in deployment metadata or package defaults.
 
 ## TypeScript suites
 
@@ -80,7 +80,7 @@ Ports default to Anvil `18545` and node TCP `42001` through `42007`; do not run 
 scripts/check-packages.sh
 ```
 
-This compares canonical contract sources, parses the public ABI, creates all four crates.io archives, and packs both npm packages. It detects missing package content, invalid metadata, dependency version drift, and unintended source divergence before publication.
+This compares canonical contract sources and deployment manifests, validates the public ABI and pinned Ethereum metadata, creates all four crates.io archives, and packs both npm packages. It detects missing package content, invalid metadata, dependency version drift, and unintended source or deployment-record divergence before publication.
 
 ## CI job map
 

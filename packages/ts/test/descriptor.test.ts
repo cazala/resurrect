@@ -1,11 +1,31 @@
 import { describe, expect, it } from 'vitest'
-import { deriveNamespace, parseDescriptor } from '../src/index.js'
+import {
+  ETHEREUM_MAINNET_REGISTRY,
+  deriveNamespace,
+  ethereumMainnetDescriptor,
+  parseDescriptor
+} from '../src/index.js'
 
 describe('network descriptor', () => {
   it('derives the shared namespace algorithm', () => {
     expect(deriveNamespace('example-network', 1)).toBe(
       '0x80b9e2baaf4a666ec32337c351ad59485b3a43eca09a5f372e2f84b981123c88'
     )
+  })
+
+  it('pins the published Ethereum mainnet registry without choosing a namespace or provider', () => {
+    const namespace = deriveNamespace('canonical-deployment-test', 1)
+    const descriptor = ethereumMainnetDescriptor(namespace)
+
+    expect(ETHEREUM_MAINNET_REGISTRY).toEqual({
+      chainId: 1n,
+      address: '0x6F33c332e8251dcd307D85A27fCcAbd85d578910',
+      deploymentBlock: 25_882_327n,
+      maxTtlSeconds: 7_776_000
+    })
+    expect(descriptor.registry).toEqual(ETHEREUM_MAINNET_REGISTRY)
+    expect(descriptor.namespace).toBe(namespace)
+    expect(descriptor.acceptedRecordTypes).toEqual([2])
   })
 
   it('normalizes and rejects ambiguous descriptors', () => {

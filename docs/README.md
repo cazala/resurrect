@@ -12,6 +12,6 @@ The normative protocol is [spec.md](spec.md). Other documents explain this repos
 | [Testing](testing.md) | contributors and auditors | unit, fuzz, invariant, fork, interop, reboot suites |
 | [Conformance](conformance.md) | implementers | spec checklist-to-evidence map |
 | [Releasing](releasing.md) | maintainers | next/latest automation and required credentials |
-| [Deployments](deployments.md) | application maintainers | registry deployment and descriptor pinning |
+| [Deployments](deployments.md) | application maintainers | verified Ethereum mainnet registry, reproducibility, and descriptor pinning |
 
 Start with the [project README](../README.md) for installation and quick-start commands.

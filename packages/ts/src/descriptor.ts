@@ -1,8 +1,19 @@
 import { getAddress, isAddress, isHex, keccak256, stringToHex } from 'viem'
-import type { JsonNetworkDescriptor, NetworkDescriptor } from './types.js'
+import type { JsonNetworkDescriptor, NetworkDescriptor, RegistryDescriptor } from './types.js'
 
 export const RESURRECT_VERSION = 1 as const
 export const MAX_TTL_SECONDS = 7_776_000
+export const ETHEREUM_MAINNET_CHAIN_ID = 1n
+export const ETHEREUM_MAINNET_REGISTRY_ADDRESS = getAddress(
+  '0x6F33c332e8251dcd307D85A27fCcAbd85d578910'
+)
+export const ETHEREUM_MAINNET_REGISTRY_DEPLOYMENT_BLOCK = 25_882_327n
+export const ETHEREUM_MAINNET_REGISTRY: Readonly<RegistryDescriptor> = Object.freeze({
+  chainId: ETHEREUM_MAINNET_CHAIN_ID,
+  address: ETHEREUM_MAINNET_REGISTRY_ADDRESS,
+  deploymentBlock: ETHEREUM_MAINNET_REGISTRY_DEPLOYMENT_BLOCK,
+  maxTtlSeconds: MAX_TTL_SECONDS
+})
 const UINT64_MAX = (1n << 64n) - 1n
 const UINT256_MAX = (1n << 256n) - 1n
 
@@ -11,6 +22,23 @@ export function deriveNamespace(application: string, majorVersion: bigint | numb
   const major = BigInt(majorVersion)
   if (major < 0n) throw new Error('major protocol version must not be negative')
   return keccak256(stringToHex(`resurrect:${application}:${major}`))
+}
+
+export function ethereumMainnetDescriptor(
+  namespace: `0x${string}`,
+  acceptedRecordTypes: readonly number[] = [2]
+): NetworkDescriptor {
+  return parseDescriptor({
+    resurrectVersion: RESURRECT_VERSION,
+    registry: {
+      chainId: Number(ETHEREUM_MAINNET_CHAIN_ID),
+      address: ETHEREUM_MAINNET_REGISTRY_ADDRESS,
+      deploymentBlock: Number(ETHEREUM_MAINNET_REGISTRY_DEPLOYMENT_BLOCK),
+      maxTtlSeconds: MAX_TTL_SECONDS
+    },
+    namespace,
+    acceptedRecordTypes: [...acceptedRecordTypes]
+  })
 }
 
 export function parseDescriptor(input: unknown): NetworkDescriptor {

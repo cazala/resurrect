@@ -16,7 +16,7 @@ categories = ["network-programming", "cryptography"]
 alloy.workspace = true
 alloy-primitives.workspace = true
 async-trait.workspace = true
-resurrect-core = { version = "0.1.0", path = "../resurrect-core" }
+resurrect-core = { version = "0.2.0", path = "../resurrect-core" }
 thiserror.workspace = true
 tracing.workspace = true
 url.workspace = true

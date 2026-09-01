@@ -2,6 +2,8 @@
 
 `@resurrect-protocol/client` implements read-only Resurrect discovery for web and static applications. It accepts a caller-owned provider and does not contain a mandatory RPC hostname, wallet, hosted API, analytics endpoint, or account-access flow.
 
+Use `ethereumMainnetDescriptor(deriveNamespace(application, majorVersion))` to pin the published Ethereum registry while retaining an application-specific namespace. Use `parseDescriptor` for another verified deployment. Neither path chooses or stores a provider URL.
+
 ## Provider choices
 
 Use `jsonRpcProvider(url)` for a URL entered or configured by the user, or `injectedProvider(eip1193)` for a wallet/host provider. Both expose the same minimal `RegistryProvider` interface. A failing provider can be replaced at runtime with `client.setProvider(replacement)`.

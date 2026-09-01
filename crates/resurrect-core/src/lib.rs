@@ -10,7 +10,11 @@ mod namespace;
 mod peer_record;
 mod validation;
 
-pub use descriptor::{DescriptorError, NetworkDescriptor, RESURRECT_VERSION, RegistryDescriptor};
+pub use descriptor::{
+    DescriptorError, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_MAINNET_REGISTRY_ADDRESS,
+    ETHEREUM_MAINNET_REGISTRY_DEPLOYMENT_BLOCK, NetworkDescriptor, RESURRECT_VERSION,
+    RegistryDescriptor, ethereum_mainnet_registry,
+};
 pub use namespace::{Namespace, NamespaceError};
 pub use peer_record::{
     DialContext, DiscoverySourceKind, Endpoint, PeerCandidate, PeerRecordCodec, PeerRecordError,

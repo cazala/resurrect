@@ -85,8 +85,8 @@ Every application pins the chain, immutable registry, deployment block, namespac
   "resurrectVersion": 1,
   "registry": {
     "chainId": 1,
-    "address": "0x1111111111111111111111111111111111111111",
-    "deploymentBlock": 21000000,
+    "address": "0x6F33c332e8251dcd307D85A27fCcAbd85d578910",
+    "deploymentBlock": 25882327,
     "maxTtlSeconds": 7776000
   },
   "namespace": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -96,7 +96,7 @@ Every application pins the chain, immutable registry, deployment block, namespac
 
 The JSON schema is intentionally closed: unknown fields are rejected. It never contains an RPC hostname. Applications derive a namespace with `keccak256("resurrect:<application>:<major-version>")` and distribute the descriptor as ordinary versioned application configuration.
 
-No canonical production registry is asserted by this repository. See [Deployments](docs/deployments.md).
+The reference packages pin the verified Ethereum mainnet deployment at `0x6F33c332e8251dcd307D85A27fCcAbd85d578910` (chain ID `1`, block `25882327`). Its transaction, tagged source revision, compiler settings, runtime-bytecode hash, and verification links are recorded in [Deployments](docs/deployments.md) and the machine-readable [deployment manifest](deployments/ethereum-mainnet.json). A shared stateless registry does not select an application namespace, peer list, or RPC provider.
 
 ## Run a native node
 
@@ -110,8 +110,8 @@ Run a read-only light node with a caller-selected RPC endpoint:
 
 ```bash
 target/release/resurrect-node \
-  --descriptor ./network.resurrect.json \
-  --rpc-url https://your-registry-chain-rpc.example \
+  --namespace 0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+  --rpc-url https://your-ethereum-mainnet-rpc.example \
   --listen /ip4/0.0.0.0/tcp/4001
 ```
 
@@ -120,14 +120,16 @@ Run a publicly reachable seed:
 ```bash
 export RESURRECT_ETHEREUM_PRIVATE_KEY=0x...
 target/release/resurrect-node \
-  --descriptor ./network.resurrect.json \
-  --rpc-url https://your-registry-chain-rpc.example \
+  --namespace 0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+  --rpc-url https://your-ethereum-mainnet-rpc.example \
   --seed \
   --listen /ip4/0.0.0.0/tcp/4001 \
   --advertise /dns4/seed.example/tcp/4001
 ```
 
 Seed mode requires an Ethereum signing key and at least one explicitly advertised signed endpoint. The Ethereum payer need not match the peer identity. Keep the peer identity file stable, publish only externally reachable endpoints, and use a dedicated limited-balance payer key. Private and loopback endpoints are rejected unless `--allow-private-endpoints` is explicitly enabled.
+
+`--namespace` uses the built-in Ethereum mainnet registry and signed-libp2p codec defaults. Supply `--descriptor ./network.resurrect.json` instead when using another independently verified registry or codec profile. The two options are mutually exclusive, and both still require a caller-selected `--rpc-url`.
 
 The process writes no mandatory hosted API and needs no DNS name when an IP multiaddr is usable. `--status-file` enables an atomically replaced local JSON health snapshot. Use `--allow-unfinalized` only for development chains whose `safe` or `finalized` tag does not progress.
 
@@ -139,9 +141,9 @@ Operational details are in [Node operations](docs/node-operations.md).
 
 ```toml
 [dependencies]
-resurrect-core = "0.1"
-resurrect-ethereum = "0.1"
-resurrect-libp2p = "0.1"
+resurrect-core = "0.2"
+resurrect-ethereum = "0.2"
+resurrect-libp2p = "0.2"
 ```
 
 The main abstractions accept caller-owned providers, codecs, discovery sources, native peer stores, connectors, and publishers. Applications can use the scanner/codecs without adopting the reference CLI or SQLite cache. See [Application integration](docs/application-integration.md).
@@ -155,12 +157,15 @@ pnpm add @resurrect-protocol/client
 ```ts
 import {
   ResurrectBrowserClient,
+  deriveNamespace,
+  ethereumMainnetDescriptor,
   injectedProvider,
-  jsonRpcProvider,
-  parseDescriptor
+  jsonRpcProvider
 } from '@resurrect-protocol/client'
 
-const descriptor = parseDescriptor(applicationDescriptor)
+const descriptor = ethereumMainnetDescriptor(
+  deriveNamespace('your-application', 1)
+)
 const provider = window.ethereum
   ? injectedProvider(window.ethereum)
   : jsonRpcProvider(userEnteredRpcUrl)
@@ -177,7 +182,7 @@ The package returns signed, validated dial candidates; the host application stil
 
 `ResurrectRegistryV1` has exactly four public function selectors: `VERSION()`, `MAX_TTL()`, `MAX_RECORD_BYTES()`, and `announce(bytes32,uint32,uint32,bytes)`. It has no owner, storage-backed peer set, upgrade, pause, allowlist, withdrawal, or namespace administrator.
 
-The canonical source is [`contracts/src/ResurrectRegistryV1.sol`](contracts/src/ResurrectRegistryV1.sol). CI requires its npm package mirror to be byte-for-byte identical. Deployers should independently compile, verify, and pin the resulting address and deployment block.
+The canonical source is [`contracts/src/ResurrectRegistryV1.sol`](contracts/src/ResurrectRegistryV1.sol). CI requires its npm package mirror to be byte-for-byte identical. The reference Ethereum mainnet deployment is `0x6F33c332e8251dcd307D85A27fCcAbd85d578910` at block `25882327`; its runtime bytecode exactly matches the tagged local build and its source is publicly verified. Applications should independently reproduce that verification or pin another exact deployment.
 
 ## Security
 
