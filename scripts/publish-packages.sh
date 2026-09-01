@@ -22,6 +22,36 @@ npm_package_version_exists() {
   [[ "${published_version}" == "${VERSION}" ]]
 }
 
+npm_package_tag_matches() {
+  local package="$1"
+  local tagged_version
+  if ! tagged_version="$(npm view "${package}@${NPM_TAG}" version --json 2>/dev/null)"; then
+    return 1
+  fi
+  tagged_version="${tagged_version//\"/}"
+  [[ "${tagged_version}" == "${VERSION}" ]]
+}
+
+wait_for_npm_package() {
+  local package="$1"
+  local attempt
+  local attempts="${NPM_AVAILABILITY_ATTEMPTS:-80}"
+  local interval="${NPM_AVAILABILITY_INTERVAL_SECONDS:-15}"
+
+  for attempt in $(seq 1 "${attempts}"); do
+    if npm_package_version_exists "${package}" && npm_package_tag_matches "${package}"; then
+      echo "${package}@${VERSION} is available on npm under ${NPM_TAG}"
+      return 0
+    fi
+    if [[ "${attempt}" -eq "${attempts}" ]]; then
+      echo "${package}@${VERSION} was accepted but did not become available on npm after ${attempts} checks" >&2
+      return 1
+    fi
+    echo "waiting for npm availability scan: ${package}@${VERSION} (${attempt}/${attempts})"
+    sleep "${interval}"
+  done
+}
+
 publish_crate() {
   local crate="$1"
   local attempt
@@ -52,15 +82,20 @@ publish_npm_package() {
   local package="$2"
 
   if npm_package_version_exists "${package}"; then
-    echo "${package}@${VERSION} already exists on npm; skipping"
-    return 0
+    if npm_package_tag_matches "${package}"; then
+      echo "${package}@${VERSION} already exists on npm under ${NPM_TAG}; skipping"
+      return 0
+    fi
+    echo "${package}@${VERSION} exists on npm but the ${NPM_TAG} tag does not select it" >&2
+    return 1
   fi
 
   if (cd "${directory}" && npm publish --tag "${NPM_TAG}" --access public --provenance); then
-    return 0
+    wait_for_npm_package "${package}"
+    return
   fi
-  if npm_package_version_exists "${package}"; then
-    echo "${package}@${VERSION} is visible on npm after the publish error; continuing"
+  if npm_package_version_exists "${package}" && npm_package_tag_matches "${package}"; then
+    echo "${package}@${VERSION} is visible on npm under ${NPM_TAG} after the publish error; continuing"
     return 0
   fi
   return 1
