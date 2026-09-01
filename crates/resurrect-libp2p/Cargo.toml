@@ -19,7 +19,7 @@ enr.workspace = true
 libp2p-identity.workspace = true
 multiaddr.workspace = true
 prost.workspace = true
-resurrect-core = { version = "0.1.0", path = "../resurrect-core" }
+resurrect-core = { version = "0.2.0", path = "../resurrect-core" }
 thiserror.workspace = true
 
 [dev-dependencies]

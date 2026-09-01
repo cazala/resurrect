@@ -151,6 +151,7 @@ pnpm --filter @resurrect-protocol/client test
 cargo build -p resurrect-node --locked
 
 cmp contracts/src/ResurrectRegistryV1.sol packages/contracts/src/ResurrectRegistryV1.sol
+cmp deployments/ethereum-mainnet.json packages/contracts/deployments/ethereum-mainnet.json
 node -e "JSON.parse(require('node:fs').readFileSync('packages/contracts/abi/ResurrectRegistryV1.json'))"
 
 "${ANVIL_BIN}" --port "${RPC_PORT}" --chain-id 31337 --silent \

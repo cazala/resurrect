@@ -1,11 +1,32 @@
 use crate::{MAX_TTL_SECONDS, Namespace};
-use alloy_primitives::{Address, U256};
+use alloy_primitives::{Address, U256, address};
 use serde::{Deserialize, Deserializer, Serialize, Serializer, de::Visitor};
 use std::{collections::HashSet, fmt};
 use thiserror::Error;
 
 /// The only protocol version implemented by this crate.
 pub const RESURRECT_VERSION: u32 = 1;
+
+/// EIP-155 chain identifier of the reference Ethereum mainnet deployment.
+pub const ETHEREUM_MAINNET_CHAIN_ID: u64 = 1;
+
+/// Address of the reference `ResurrectRegistryV1` deployment on Ethereum mainnet.
+pub const ETHEREUM_MAINNET_REGISTRY_ADDRESS: Address =
+    address!("6F33c332e8251dcd307D85A27fCcAbd85d578910");
+
+/// Receipt block of the reference `ResurrectRegistryV1` deployment.
+pub const ETHEREUM_MAINNET_REGISTRY_DEPLOYMENT_BLOCK: u64 = 25_882_327;
+
+/// Returns the pinned reference registry deployment on Ethereum mainnet.
+#[must_use]
+pub fn ethereum_mainnet_registry() -> RegistryDescriptor {
+    RegistryDescriptor {
+        chain_id: U256::from(ETHEREUM_MAINNET_CHAIN_ID),
+        address: ETHEREUM_MAINNET_REGISTRY_ADDRESS,
+        deployment_block: ETHEREUM_MAINNET_REGISTRY_DEPLOYMENT_BLOCK,
+        max_ttl_seconds: MAX_TTL_SECONDS,
+    }
+}
 
 /// Location and immutable limits of a Resurrect registry deployment.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -38,6 +59,28 @@ pub struct NetworkDescriptor {
 }
 
 impl NetworkDescriptor {
+    /// Builds an application descriptor using the reference Ethereum mainnet registry.
+    ///
+    /// The namespace and accepted signed-record codecs remain application-owned;
+    /// no RPC provider is embedded by this constructor.
+    ///
+    /// # Errors
+    ///
+    /// Returns a descriptor invariant error when the codec list is empty or duplicated.
+    pub fn ethereum_mainnet(
+        namespace: Namespace,
+        accepted_record_types: Vec<u32>,
+    ) -> Result<Self, DescriptorError> {
+        let descriptor = Self {
+            resurrect_version: RESURRECT_VERSION,
+            registry: ethereum_mainnet_registry(),
+            namespace,
+            accepted_record_types,
+        };
+        descriptor.validate()?;
+        Ok(descriptor)
+    }
+
     /// Parses and validates a descriptor from JSON.
     ///
     /// # Errors
@@ -260,6 +303,20 @@ mod tests {
                 .chain_id,
             U256::from(1)
         );
+    }
+
+    #[test]
+    fn ethereum_mainnet_constructor_pins_published_deployment() {
+        let namespace = Namespace::derive("canonical-deployment-test", 1);
+        let descriptor = NetworkDescriptor::ethereum_mainnet(namespace, vec![2]).unwrap();
+        assert_eq!(descriptor.registry.chain_id, U256::from(1));
+        assert_eq!(
+            descriptor.registry.address,
+            Address::from_str("0x6F33c332e8251dcd307D85A27fCcAbd85d578910").unwrap()
+        );
+        assert_eq!(descriptor.registry.deployment_block, 25_882_327);
+        assert_eq!(descriptor.registry.max_ttl_seconds, MAX_TTL_SECONDS);
+        descriptor.validate().unwrap();
     }
 
     #[test]

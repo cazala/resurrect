@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "contract": "ResurrectRegistryV1",
+  "network": "ethereum-mainnet",
+  "chainId": 1,
+  "address": "0x6F33c332e8251dcd307D85A27fCcAbd85d578910",
+  "deploymentBlock": 25882327,
+  "deploymentTimestamp": "2026-09-01T12:07:23Z",
+  "transactionHash": "0x41f8b9e49265c5796c627eb8e32bd0d366f9408dfc0c75861189758f638440ab",
+  "deployer": "0x318027A00a3A3eB6A7d6F45C832e47c126B4F2C2",
+  "runtimeBytecodeHash": "0x0024244f6ad881009b5726d2c1644a3c2aff178852c4d01b1066cd7d9967c109",
+  "source": {
+    "repository": "https://github.com/cazala/resurrect",
+    "tag": "v0.1.0",
+    "commit": "3298158d0e86959a05434495eb28335808e7964a",
+    "path": "contracts/src/ResurrectRegistryV1.sol"
+  },
+  "compiler": {
+    "language": "Solidity",
+    "version": "0.8.24",
+    "optimizer": true,
+    "optimizerRuns": 20000,
+    "bytecodeHash": "none",
+    "cborMetadata": false
+  },
+  "verification": {
+    "provider": "Sourcify",
+    "status": "match",
+    "verifiedAt": "2026-09-01T12:08:54Z",
+    "url": "https://repo.sourcify.dev/1/0x6F33c332e8251dcd307D85A27fCcAbd85d578910",
+    "apiUrl": "https://sourcify.dev/server/v2/contract/1/0x6F33c332e8251dcd307D85A27fCcAbd85d578910"
+  }
+}

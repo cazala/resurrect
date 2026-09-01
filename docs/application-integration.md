@@ -6,7 +6,7 @@ An application adopting Resurrect must decide and document:
 
 - its stable application identifier and major protocol version;
 - the derived namespace;
-- an independently verified immutable registry deployment;
+- the reference Ethereum mainnet registry or another independently verified immutable deployment;
 - accepted record codecs;
 - supported native and browser dial contexts;
 - the authenticated application handshake performed after transport connection;
@@ -20,6 +20,8 @@ Derive the namespace as `keccak256(UTF8("resurrect:<application>:<major>"))`. Ch
 Embed or ship the descriptor with application releases. Pin the chain ID, contract address, deployment block, `7776000` maximum TTL, namespace, and accepted codecs. Do not put an RPC URL, DNS bootstrap name, token, owner, or mutable control plane into the descriptor.
 
 Use JSON integers within the safe-integer range for the portable descriptor form. Both reference implementations accept canonical unsigned decimal strings for larger chain IDs and deployment blocks; the Rust serializer emits that form when necessary. Both parsers enforce the on-chain `uint256` chain-ID and `uint64` block-number widths. Unknown fields, duplicate codecs, wrong constants, and malformed addresses/namespaces are rejected.
+
+For the published Ethereum mainnet deployment, Rust applications can call `NetworkDescriptor::ethereum_mainnet(namespace, accepted_record_types)`, and TypeScript applications can call `ethereumMainnetDescriptor(namespace, acceptedRecordTypes)`. These constructors pin chain ID `1`, registry `0x6F33c332e8251dcd307D85A27fCcAbd85d578910`, block `25882327`, and the v1 TTL. They intentionally do not derive the namespace, choose a provider, or add an RPC URL. See [Deployments](deployments.md) for reproducible verification evidence.
 
 ## Compose the Rust libraries
 

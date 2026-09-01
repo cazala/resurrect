@@ -8,7 +8,7 @@ Every artifact that can be independently consumed is published:
 - npm: `@resurrect-protocol/contracts`, `@resurrect-protocol/client`; and
 - GitHub Release: `resurrect-node` binaries for Linux, macOS, and Windows, SHA-256 checksums, and attestations.
 
-The canonical Solidity source and ABI are distributed by npm rather than a separate contract binary channel.
+The canonical Solidity source, ABI, and machine-readable reference Ethereum deployment manifest are distributed by npm rather than a separate contract binary channel. Rust and TypeScript packages expose the same address/block as typed constants and constructors; packaging tests fail if those values drift.
 
 ## Development releases from main
 
@@ -37,7 +37,7 @@ The publishing identities must own or be allowed to create the `resurrect-*` cra
 
 The workflow has `id-token: write` and requests npm provenance. With trusted publishing configured, `NPM_TOKEN` should be omitted. If either npm package does not yet exist and npm cannot attach a trusted publisher before first publication, perform the one-time initial publish with a granular `NPM_TOKEN`, then configure trusted publishing and remove the token.
 
-Optional `MAINNET_RPC_URL` enables the real-state fork suite. It is not required for local EVM, unit, integration, packaging, or release tests; without it the fork test returns early.
+Optional `MAINNET_RPC_URL` enables the real-state fork suite, including live verification of the published Ethereum mainnet contract. It is not required for local EVM, unit, integration, packaging, or release tests; without it the live assertions return early.
 
 GitHub's built-in token supplies release upload and attestation permissions. The asset job passes `GITHUB_REPOSITORY` to `gh release upload` explicitly because it intentionally does not check out source or rely on local Git metadata. No contract deployer key, production RPC URL, libp2p identity, hosted API key, DNS credential, or Ethereum announcement key is needed by CI.
 

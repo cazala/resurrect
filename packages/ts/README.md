@@ -18,22 +18,14 @@ Node.js 22 or newer is required for the supported server-side toolchain. The emi
 import {
   ResurrectBrowserClient,
   deriveNamespace,
+  ethereumMainnetDescriptor,
   injectedProvider,
-  jsonRpcProvider,
-  parseDescriptor
+  jsonRpcProvider
 } from '@resurrect-protocol/client'
 
-const descriptor = parseDescriptor({
-  resurrectVersion: 1,
-  registry: {
-    chainId: 1,
-    address: '0x1111111111111111111111111111111111111111',
-    deploymentBlock: 21_000_000,
-    maxTtlSeconds: 7_776_000
-  },
-  namespace: deriveNamespace('your-application', 1),
-  acceptedRecordTypes: [2]
-})
+const descriptor = ethereumMainnetDescriptor(
+  deriveNamespace('your-application', 1)
+)
 
 const provider = selectedEip1193Provider
   ? injectedProvider(selectedEip1193Provider)
@@ -46,7 +38,7 @@ for (const candidate of report.candidates) {
 }
 ```
 
-Replace placeholder deployment values with independently verified application configuration. The descriptor must not contain an RPC URL.
+`ethereumMainnetDescriptor` pins the published registry at `0x6F33c332e8251dcd307D85A27fCcAbd85d578910`, chain ID `1`, and deployment block `25882327`; it defaults to signed libp2p records (codec `2`). The namespace and RPC provider remain application-owned. Use `parseDescriptor` when selecting a different verified deployment or codec profile. A descriptor must never contain an RPC URL.
 
 ## Provider behavior
 
@@ -93,7 +85,8 @@ Resurrect discovery is not application authorization. After dialing, authenticat
 
 ## Public API
 
-- `parseDescriptor`, `parseDescriptorJson`, `deriveNamespace`
+- `parseDescriptor`, `parseDescriptorJson`, `deriveNamespace`, `ethereumMainnetDescriptor`
+- `ETHEREUM_MAINNET_REGISTRY` and its chain/address/deployment-block constants
 - `jsonRpcProvider`, `injectedProvider`, `persistJsonRpcUrl`
 - `ResurrectBrowserClient`, `scanRegistry`, `verifyProvider`
 - `decodeBrowserPeerRecord`

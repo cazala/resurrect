@@ -194,6 +194,8 @@ Fields:
 
 The descriptor is application configuration. Resurrect does not specify how a participant learns its application's descriptor.
 
+The reference implementation publishes a verified `ResurrectRegistryV1` deployment on Ethereum mainnet at `0x6F33c332e8251dcd307D85A27fCcAbd85d578910`, with deployment block `25882327`. This is a non-normative convenience: conforming applications MAY use that deployment or another contract satisfying section 8, but MUST still define their own namespace, accepted codecs, and independently supplied provider. Sharing the stateless contract does not merge namespaces or establish a global peer list.
+
 ### 7.1 Recommended namespace derivation
 
 Applications SHOULD derive namespaces as:

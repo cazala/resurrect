@@ -32,6 +32,8 @@ Assume an attacker can publish unlimited syntactically valid or malformed events
 - Native discovery remains independent of registry/provider availability.
 - The contract has no privileged account or mutable peer storage to capture.
 
+The published Ethereum mainnet address is deployment metadata, not a trust claim about its deployer. The bytecode, constants, and receipt block are pinned and reproducible; the deployer cannot change the contract or administer namespaces. Consumers should still verify the code through independent providers and explorers.
+
 ## Residual risks
 
 Resurrect cannot prevent a well-funded Sybil/eclipsing population, prove liveness before dialing, guarantee RPC completeness, route around EVM censorship, hide public seed endpoints, recover deleted application data, or fix a vulnerable application handshake. One available attacker-controlled peer may be the only discoverable candidate.
