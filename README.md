@@ -110,7 +110,8 @@ Run a read-only light node with a caller-selected RPC endpoint:
 
 ```bash
 target/release/resurrect-node \
-  --namespace 0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+  --application your-application \
+  --major-version 1 \
   --rpc-url https://your-ethereum-mainnet-rpc.example \
   --listen /ip4/0.0.0.0/tcp/4001
 ```
@@ -120,7 +121,8 @@ Run a publicly reachable seed:
 ```bash
 export RESURRECT_ETHEREUM_PRIVATE_KEY=0x...
 target/release/resurrect-node \
-  --namespace 0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+  --application your-application \
+  --major-version 1 \
   --rpc-url https://your-ethereum-mainnet-rpc.example \
   --seed \
   --listen /ip4/0.0.0.0/tcp/4001 \
@@ -129,7 +131,7 @@ target/release/resurrect-node \
 
 Seed mode requires an Ethereum signing key and at least one explicitly advertised signed endpoint. The Ethereum payer need not match the peer identity. Keep the peer identity file stable, publish only externally reachable endpoints, and use a dedicated limited-balance payer key. Private and loopback endpoints are rejected unless `--allow-private-endpoints` is explicitly enabled.
 
-`--namespace` uses the built-in Ethereum mainnet registry and signed-libp2p codec defaults. Supply `--descriptor ./network.resurrect.json` instead when using another independently verified registry or codec profile. The two options are mutually exclusive, and both still require a caller-selected `--rpc-url`.
+`--application` with `--major-version` constructs and hashes the canonical `resurrect:<application>:<major-version>` preimage, then uses the built-in Ethereum mainnet registry and signed-libp2p codec defaults. `--namespace 0x...` accepts the already-derived value. Supply `--descriptor ./network.resurrect.json` instead when using another independently verified registry or codec profile. These three descriptor sources are mutually exclusive, and all still require a caller-selected `--rpc-url`.
 
 The process writes no mandatory hosted API and needs no DNS name when an IP multiaddr is usable. `--status-file` enables an atomically replaced local JSON health snapshot. Use `--allow-unfinalized` only for development chains whose `safe` or `finalized` tag does not progress.
 
@@ -141,9 +143,9 @@ Operational details are in [Node operations](docs/node-operations.md).
 
 ```toml
 [dependencies]
-resurrect-core = "0.2"
-resurrect-ethereum = "0.2"
-resurrect-libp2p = "0.2"
+resurrect-core = "0.3"
+resurrect-ethereum = "0.3"
+resurrect-libp2p = "0.3"
 ```
 
 The main abstractions accept caller-owned providers, codecs, discovery sources, native peer stores, connectors, and publishers. Applications can use the scanner/codecs without adopting the reference CLI or SQLite cache. See [Application integration](docs/application-integration.md).

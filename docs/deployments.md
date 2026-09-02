@@ -17,12 +17,13 @@ The reference packages default to this immutable `ResurrectRegistryV1` deploymen
 | Tagged source | `v0.1.0`, commit `3298158d0e86959a05434495eb28335808e7964a` |
 | Compiler | Solidity `0.8.24`, optimizer enabled, `20000` runs, CBOR metadata disabled, bytecode hash `none` |
 
-Inspect the [transaction on Etherscan](https://etherscan.io/tx/0x41f8b9e49265c5796c627eb8e32bd0d366f9408dfc0c75861189758f638440ab), the [contract on Etherscan](https://etherscan.io/address/0x6F33c332e8251dcd307D85A27fCcAbd85d578910), or the [verified source on Sourcify](https://repo.sourcify.dev/1/0x6F33c332e8251dcd307D85A27fCcAbd85d578910). The complete record is machine-readable at [`deployments/ethereum-mainnet.json`](../deployments/ethereum-mainnet.json) and is also published by `@resurrect-protocol/contracts/deployments/ethereum-mainnet.json`.
+Inspect the [transaction on Etherscan](https://etherscan.io/tx/0x41f8b9e49265c5796c627eb8e32bd0d366f9408dfc0c75861189758f638440ab), the [verified source on Etherscan](https://etherscan.io/address/0x6F33c332e8251dcd307D85A27fCcAbd85d578910#code), or the [verified source on Sourcify](https://repo.sourcify.dev/1/0x6F33c332e8251dcd307D85A27fCcAbd85d578910). The complete record is machine-readable at [`deployments/ethereum-mainnet.json`](../deployments/ethereum-mainnet.json) and is also published by `@resurrect-protocol/contracts/deployments/ethereum-mainnet.json`.
 
 Deployment verification established all of the following:
 
 - the receipt succeeded at the pinned block;
 - the onchain runtime bytecode is byte-for-byte equal to the local build;
+- Etherscan reports the exact source verified with Solidity `0.8.24` and `20000` optimizer runs;
 - Sourcify reports matching creation and runtime code for the published source;
 - `VERSION() == 1`, `MAX_TTL() == 7776000`, and `MAX_RECORD_BYTES() == 4096`;
 - the contract exposes only the three constant getters and `announce(bytes32,uint32,uint32,bytes)`;
@@ -49,7 +50,7 @@ Replace the namespace below with the application-derived value:
 }
 ```
 
-A descriptor never includes an RPC URL. The Rust and TypeScript packages expose constructors and constants for the reference deployment, while the native node accepts `--namespace` as its Ethereum-mainnet shortcut.
+A descriptor never includes an RPC URL. The Rust and TypeScript packages expose constructors and constants for the reference deployment. The native node accepts either `--application` plus `--major-version` to derive the canonical namespace, or `--namespace` for a precomputed value, as its Ethereum-mainnet shortcut.
 
 ## Independent verification
 

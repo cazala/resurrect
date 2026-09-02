@@ -1,6 +1,6 @@
 {
   "name": "@resurrect-protocol/client",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Browser and static-client implementation of Resurrect v1",
   "type": "module",
   "license": "MIT OR Apache-2.0",
