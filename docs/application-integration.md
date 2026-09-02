@@ -15,6 +15,8 @@ An application adopting Resurrect must decide and document:
 
 Derive the namespace as `keccak256(UTF8("resurrect:<application>:<major>"))`. Change the major component when versions cannot safely share the same overlay. Do not derive it from a maintainer domain that may disappear.
 
+Use `Namespace::derive(application, major)` in Rust or `deriveNamespace(application, major)` in TypeScript instead of assembling or hashing the preimage independently. The native node provides the same operation through `--application <IDENTIFIER> --major-version <MAJOR>`; use `--namespace 0x...` only when passing a previously derived value.
+
 ## Distribute a descriptor
 
 Embed or ship the descriptor with application releases. Pin the chain ID, contract address, deployment block, `7776000` maximum TTL, namespace, and accepted codecs. Do not put an RPC URL, DNS bootstrap name, token, owner, or mutable control plane into the descriptor.

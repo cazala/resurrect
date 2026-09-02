@@ -16,13 +16,14 @@ A light node scans and dials but never writes. A seed adds `--seed`, an Ethereum
 
 Never commit payer or identity keys. Prefer a dedicated payer account with only enough funds for renewal. The payer address is not the libp2p identity and receives no protocol authority.
 
-The reference node can build its descriptor from an explicit application namespace and the published Ethereum mainnet registry. This is the shortest production configuration. Use `--descriptor` instead for another verified registry or codec profile; `--namespace` and `--descriptor` are mutually exclusive. Neither form selects an RPC provider.
+The reference node can derive a namespace from an application identifier and major version, or accept an already-derived namespace, and combine it with the published Ethereum mainnet registry. Use `--descriptor` instead for another verified registry or codec profile. `--application`, `--namespace`, and `--descriptor` are mutually exclusive descriptor sources. None selects an RPC provider.
 
 ## Starting a light node
 
 ```bash
 resurrect-node \
-  --namespace 0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+  --application your-application \
+  --major-version 1 \
   --rpc-url https://caller-selected-ethereum-mainnet-rpc.example \
   --identity /var/lib/resurrect/identity.key \
   --cache /var/lib/resurrect/peers.sqlite3 \
@@ -37,7 +38,8 @@ The node first tries its verified cache and native observations from configured 
 ```bash
 export RESURRECT_ETHEREUM_PRIVATE_KEY=0x...
 resurrect-node \
-  --namespace 0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+  --application your-application \
+  --major-version 1 \
   --rpc-url https://caller-selected-ethereum-mainnet-rpc.example \
   --identity /var/lib/resurrect/identity.key \
   --cache /var/lib/resurrect/peers.sqlite3 \
@@ -48,7 +50,7 @@ resurrect-node \
 
 The documentation name above is illustrative and should not be used in production. Use an actually reachable address. Seed startup fails if the signing key or advertised endpoint is absent. Before every announcement the node verifies that its provider's chain ID and registry constants match the descriptor.
 
-For a custom deployment, replace `--namespace ...` with `--descriptor /etc/resurrect/network.json`. Derive the namespace as `keccak256("resurrect:<application>:<major-version>")` and distribute it as integrity-critical application configuration; do not reuse the placeholder value above.
+The two structured flags construct and hash the exact UTF-8 preimage `resurrect:<application>:<major-version>`. Use `--namespace 0x...` when the derived value is already distributed as integrity-critical application configuration. For a custom deployment, use `--descriptor /etc/resurrect/network.json` instead. Do not reuse another application's identifier or namespace.
 
 ## Endpoint policy
 

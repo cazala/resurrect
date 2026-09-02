@@ -29,5 +29,12 @@
     "verifiedAt": "2026-09-01T12:08:54Z",
     "url": "https://repo.sourcify.dev/1/0x6F33c332e8251dcd307D85A27fCcAbd85d578910",
     "apiUrl": "https://sourcify.dev/server/v2/contract/1/0x6F33c332e8251dcd307D85A27fCcAbd85d578910"
+  },
+  "explorers": {
+    "etherscan": {
+      "status": "verified",
+      "verifiedAt": "2026-09-02T12:23:05Z",
+      "url": "https://etherscan.io/address/0x6F33c332e8251dcd307D85A27fCcAbd85d578910#code"
+    }
   }
 }

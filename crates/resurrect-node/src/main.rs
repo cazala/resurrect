@@ -2,7 +2,7 @@
 
 use alloy::signers::local::PrivateKeySigner;
 use anyhow::{Context, Result, bail};
-use clap::{Parser, ValueEnum};
+use clap::{ArgGroup, Parser, ValueEnum};
 use libp2p::Multiaddr;
 use resurrect_core::{
     CodecRegistry, DEFAULT_MAX_ENDPOINTS_PER_RECORD, DialContext, Namespace, NetworkDescriptor,
@@ -26,26 +26,33 @@ enum LogFormat {
 
 /// Native Resurrect v1 reference seed/light node.
 #[derive(Debug, Parser)]
-#[command(version, about)]
+#[command(
+    version,
+    about,
+    group(
+        ArgGroup::new("descriptor-source")
+            .required(true)
+            .multiple(false)
+            .args(["descriptor", "namespace", "application"])
+    )
+)]
 #[allow(clippy::struct_excessive_bools)]
 struct Cli {
     /// Application-owned Resurrect network descriptor JSON file.
-    #[arg(
-        long,
-        value_name = "PATH",
-        conflicts_with = "namespace",
-        required_unless_present = "namespace"
-    )]
+    #[arg(long, value_name = "PATH")]
     descriptor: Option<PathBuf>,
 
-    /// Application namespace using the reference Ethereum mainnet registry and libp2p codec.
-    #[arg(
-        long,
-        value_name = "0xBYTES32",
-        conflicts_with = "descriptor",
-        required_unless_present = "descriptor"
-    )]
+    /// Precomputed application namespace using the reference Ethereum mainnet registry.
+    #[arg(long, value_name = "0xBYTES32")]
     namespace: Option<Namespace>,
+
+    /// Application identifier used to derive the canonical namespace preimage.
+    #[arg(long, value_name = "IDENTIFIER", requires = "major_version")]
+    application: Option<String>,
+
+    /// Major application protocol version used with `--application`.
+    #[arg(long, value_name = "MAJOR", requires = "application")]
+    major_version: Option<u64>,
 
     /// Caller-selected Ethereum JSON-RPC endpoint.
     #[arg(long, env = "RESURRECT_RPC_URL")]
@@ -285,9 +292,21 @@ async fn load_descriptor(cli: &Cli) -> Result<NetworkDescriptor> {
             .context("network descriptor is not conforming Resurrect v1 JSON");
     }
 
-    let namespace = cli
-        .namespace
-        .context("either --descriptor or --namespace is required")?;
+    let namespace = if let Some(namespace) = cli.namespace {
+        namespace
+    } else {
+        let application = cli
+            .application
+            .as_deref()
+            .context("one descriptor source is required")?;
+        if application.is_empty() {
+            bail!("--application must not be empty");
+        }
+        let major_version = cli
+            .major_version
+            .context("--application requires --major-version")?;
+        Namespace::derive(application, major_version)
+    };
     NetworkDescriptor::ethereum_mainnet(namespace, vec![RECORD_TYPE_LIBP2P])
         .context("built-in Ethereum mainnet descriptor is invalid")
 }
@@ -385,10 +404,45 @@ mod cli_tests {
 
         assert!(cli.descriptor.is_none());
         assert_eq!(cli.namespace.unwrap().to_string(), NAMESPACE);
+        assert!(cli.application.is_none());
+        assert!(cli.major_version.is_none());
+    }
+
+    #[tokio::test]
+    async fn derives_namespace_from_application_and_major_version() {
+        let cli = Cli::try_parse_from([
+            "resurrect-node",
+            "--application",
+            "example-network",
+            "--major-version",
+            "1",
+            "--rpc-url",
+            "https://ethereum.example",
+        ])
+        .unwrap();
+
+        let descriptor = load_descriptor(&cli).await.unwrap();
+        assert_eq!(descriptor.namespace.to_string(), NAMESPACE);
+    }
+
+    #[tokio::test]
+    async fn rejects_empty_application_identifier() {
+        let cli = Cli::try_parse_from([
+            "resurrect-node",
+            "--application",
+            "",
+            "--major-version",
+            "1",
+            "--rpc-url",
+            "https://ethereum.example",
+        ])
+        .unwrap();
+
+        assert!(load_descriptor(&cli).await.is_err());
     }
 
     #[test]
-    fn requires_exactly_one_descriptor_source() {
+    fn requires_one_complete_and_unambiguous_descriptor_source() {
         assert!(
             Cli::try_parse_from(["resurrect-node", "--rpc-url", "https://ethereum.example",])
                 .is_err()
@@ -400,6 +454,40 @@ mod cli_tests {
                 "network.json",
                 "--namespace",
                 NAMESPACE,
+                "--rpc-url",
+                "https://ethereum.example",
+            ])
+            .is_err()
+        );
+        assert!(
+            Cli::try_parse_from([
+                "resurrect-node",
+                "--application",
+                "example-network",
+                "--rpc-url",
+                "https://ethereum.example",
+            ])
+            .is_err()
+        );
+        assert!(
+            Cli::try_parse_from([
+                "resurrect-node",
+                "--major-version",
+                "1",
+                "--rpc-url",
+                "https://ethereum.example",
+            ])
+            .is_err()
+        );
+        assert!(
+            Cli::try_parse_from([
+                "resurrect-node",
+                "--namespace",
+                NAMESPACE,
+                "--application",
+                "example-network",
+                "--major-version",
+                "1",
                 "--rpc-url",
                 "https://ethereum.example",
             ])
