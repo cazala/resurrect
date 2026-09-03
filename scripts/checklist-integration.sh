@@ -139,6 +139,9 @@ cat >artifacts/implementer-checklist.json <<JSON
   "browserCustomAndInjectedProvidersWithoutAccounts": false,
   "chainIdVerifiedAndProviderSwitchingSupported": false,
   "browserDialContextDefined": false,
+  "browserWebSocketAuthenticated": false,
+  "browserPeerIdentityVerified": false,
+  "browserPingAndIdentifyCompleted": false,
   "unrelatedOperatorsRebootedAfterTotalShutdown": false,
   "noOwnerDnsHostedApiOrOriginalOperatorRequired": false,
   "simultaneousRebootFormedConnection": false
@@ -149,6 +152,10 @@ JSON
 cargo test --workspace --all-targets --locked
 pnpm --filter @resurrect-protocol/client test
 cargo build -p resurrect-node --locked
+pnpm --filter @resurrect-protocol/explorer check
+pnpm --filter @resurrect-protocol/explorer build
+RESURRECT_NODE_BIN="${NODE_BIN}" RESURRECT_TEST_WS_PORT=42008 \
+  pnpm --filter @resurrect-protocol/explorer test -- rust-interop.test.ts
 
 cmp contracts/src/ResurrectRegistryV1.sol packages/contracts/src/ResurrectRegistryV1.sol
 cmp deployments/ethereum-mainnet.json packages/contracts/deployments/ethereum-mainnet.json
@@ -237,6 +244,9 @@ cat >artifacts/implementer-checklist.json <<JSON
   "browserCustomAndInjectedProvidersWithoutAccounts": true,
   "chainIdVerifiedAndProviderSwitchingSupported": true,
   "browserDialContextDefined": true,
+  "browserWebSocketAuthenticated": true,
+  "browserPeerIdentityVerified": true,
+  "browserPingAndIdentifyCompleted": true,
   "unrelatedOperatorsRebootedAfterTotalShutdown": true,
   "noOwnerDnsHostedApiOrOriginalOperatorRequired": true,
   "simultaneousRebootFormedConnection": true,

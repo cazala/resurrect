@@ -57,6 +57,9 @@ jobs:
       - run: pnpm --filter @resurrect-protocol/client check
       - run: pnpm --filter @resurrect-protocol/client build
       - run: pnpm --filter @resurrect-protocol/client test
+      - run: pnpm --filter @resurrect-protocol/explorer check
+      - run: pnpm --filter @resurrect-protocol/explorer build
+      - run: pnpm --filter @resurrect-protocol/explorer test
       - run: pnpm --dir packages/contracts test
 
   packages:

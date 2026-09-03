@@ -45,7 +45,9 @@ resurrect-node \
   --cache /var/lib/resurrect/peers.sqlite3 \
   --seed \
   --listen /ip4/0.0.0.0/tcp/4001 \
-  --advertise /dns4/seed.example/tcp/4001
+  --listen /ip4/127.0.0.1/tcp/4002/ws \
+  --advertise /dns4/seed.example/tcp/4001 \
+  --advertise /dns4/seed-ws.example/tcp/443/wss
 ```
 
 The documentation name above is illustrative and should not be used in production. Use an actually reachable address. Seed startup fails if the signing key or advertised endpoint is absent. Before every announcement the node verifies that its provider's chain ID and registry constants match the descriptor.
@@ -56,7 +58,32 @@ The two structured flags construct and hash the exact UTF-8 preimage `resurrect:
 
 The advertised address is signed and permanently visible in an event. Confirm inbound reachability from outside the host and advertise the public address, not `0.0.0.0`. Production defaults reject private, loopback, unspecified, multicast, and documentation ranges. `--allow-private-endpoints` exists only for local tests and intentionally private overlays.
 
-The built-in host currently supports TCP with Noise authentication and Yamux multiplexing. Configured peers, mDNS, and identify are the included native mechanisms. Applications requiring QUIC, WebTransport, WebSocket, discv5, DHT, or peer exchange should compose the libraries into their own host or extend the adapter.
+The built-in host supports TCP and WebSocket with Noise authentication and
+Yamux multiplexing. Repeat `--listen` to serve both transports. Browsers require
+a secure `wss` address; terminate TLS at a reverse proxy or tunnel and forward
+WebSocket upgrades to a loopback `/ws` listener. Do not expose that plain
+listener publicly when the TLS edge is the intended path.
+
+The signed peer record should contain the public address, such as
+`/dns4/seed-ws.example/tcp/443/wss`, not the loopback origin. A peer record may
+contain both the native TCP and WSS endpoints for the same identity. Configured
+peers, mDNS, and identify are the included native mechanisms. Applications
+requiring QUIC, WebTransport, discv5, DHT, or peer exchange should compose the
+libraries into their own host or extend the adapter.
+
+## TLS and WebSocket edge
+
+The node intentionally serves libp2p-over-WebSocket, not a JSON API. An HTTPS
+edge must preserve WebSocket upgrade headers and stream bytes without request
+body transformation or caching. End-to-end peer authentication does not depend
+on the edge certificate: the browser first validates TLS, then Noise proves the
+libp2p identity contained in the signed registry record.
+
+When using Cloudflare Tunnel, publish an HTTP ingress to the local plain
+WebSocket listener. Cloudflare accepts public HTTPS/WSS and performs the upgrade
+through the tunnel. Keep the connector token root-only, use a dedicated tunnel,
+and retain a final `http_status:404` ingress rule. See [Hosted services](hosted-services.md)
+for the reference deployment.
 
 ## Finality and development chains
 
@@ -92,3 +119,7 @@ Protect status and log output according to your privacy model because peer IDs, 
 ## Upgrade and shutdown
 
 Graceful termination waits for Ctrl-C and shuts down the native host. Old announcements cannot be revoked; they expire, and higher signed-record sequences supersede them. During upgrades preserve the identity, verify descriptor compatibility, and avoid advertising an endpoint until the replacement listener is reachable.
+
+Adding or removing an advertised endpoint produces a higher-sequence signed
+record on the next announcement. Because an older record remains onchain until
+expiry, clients must continue to prefer the newest valid sequence for a peer.

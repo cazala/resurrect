@@ -1,2 +1,12 @@
 packages:
   - "packages/*"
+  - "apps/*"
+allowBuilds:
+  esbuild: true
+  workerd: true
+minimumReleaseAgeExclude:
+  - libp2p@3.3.11
+overrides:
+  "@libp2p/crypto": 5.1.23
+  "@libp2p/interface": 3.3.0
+  "@libp2p/peer-id": 6.0.15

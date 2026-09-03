@@ -8,6 +8,7 @@ The repository contains a complete reference implementation of [`docs/spec.md`](
 - reusable Rust protocol, Ethereum, and peer-record crates;
 - a native Tokio/rust-libp2p seed and light-node process;
 - a browser/static TypeScript registry client;
+- a static browser explorer that authenticates WSS peers and measures live ping;
 - canonical contract source and ABI packages;
 - deterministic cross-language vectors; and
 - unit, fuzz, invariant, fork, reboot, simultaneous-reboot, and packaging tests.
@@ -38,6 +39,7 @@ Resurrect does not recover lost application data, define application membership,
 | `crates/resurrect-node` | native libp2p host, SQLite cache, supervisor, CLI | `resurrect-node` crate and binaries |
 | `packages/ts` | browser/static provider and registry scanner | `@resurrect-protocol/client` |
 | `packages/contracts` | canonical Solidity source and ABI | `@resurrect-protocol/contracts` |
+| `apps/explorer` | browser discovery, authenticated WSS dial, identify, and ping UI | [resurrect.caza.la](https://resurrect.caza.la) |
 | `test-vectors/` | deterministic Rust/TypeScript interoperability data | repository data |
 | `scripts/` | conformance, packaging, and release automation | CI tooling |
 
@@ -129,6 +131,22 @@ target/release/resurrect-node \
   --advertise /dns4/seed.example/tcp/4001
 ```
 
+One process can also serve native TCP and browser WebSocket clients. Put the
+plain WebSocket listener behind a TLS reverse proxy or Cloudflare Tunnel, then
+sign both public endpoints:
+
+```bash
+target/release/resurrect-node \
+  --application your-application \
+  --major-version 1 \
+  --rpc-url https://your-ethereum-mainnet-rpc.example \
+  --seed \
+  --listen /ip4/0.0.0.0/tcp/4001 \
+  --listen /ip4/127.0.0.1/tcp/4002/ws \
+  --advertise /dns4/seed.example/tcp/4001 \
+  --advertise /dns4/seed-ws.example/tcp/443/wss
+```
+
 Seed mode requires an Ethereum signing key and at least one explicitly advertised signed endpoint. The Ethereum payer need not match the peer identity. Keep the peer identity file stable, publish only externally reachable endpoints, and use a dedicated limited-balance payer key. Private and loopback endpoints are rejected unless `--allow-private-endpoints` is explicitly enabled.
 
 `--application` with `--major-version` constructs and hashes the canonical `resurrect:<application>:<major-version>` preimage, then uses the built-in Ethereum mainnet registry and signed-libp2p codec defaults. `--namespace 0x...` accepts the already-derived value. Supply `--descriptor ./network.resurrect.json` instead when using another independently verified registry or codec profile. These three descriptor sources are mutually exclusive, and all still require a caller-selected `--rpc-url`.
@@ -143,9 +161,9 @@ Operational details are in [Node operations](docs/node-operations.md).
 
 ```toml
 [dependencies]
-resurrect-core = "0.3"
-resurrect-ethereum = "0.3"
-resurrect-libp2p = "0.3"
+resurrect-core = "0.4"
+resurrect-ethereum = "0.4"
+resurrect-libp2p = "0.4"
 ```
 
 The main abstractions accept caller-owned providers, codecs, discovery sources, native peer stores, connectors, and publishers. Applications can use the scanner/codecs without adopting the reference CLI or SQLite cache. See [Application integration](docs/application-integration.md).
@@ -178,7 +196,7 @@ const { candidates } = await client.scan()
 
 Discovery never invokes `eth_requestAccounts`. The client verifies the chain and contract constants before scanning, searches only the recent TTL window, validates libp2p signed envelopes, and retains secure browser-capable endpoints. RPC URLs remain in memory unless the application explicitly calls `persistJsonRpcUrl`.
 
-The package returns signed, validated dial candidates; the host application still owns its browser transport and authenticated application handshake. See [Browser client](docs/browser-client.md).
+The package returns signed, validated dial candidates; the host application still owns its browser transport and authenticated application handshake. The repository's [hosted explorer](https://resurrect.caza.la) is a minimal reference host: it scans the canonical namespace, completes an authenticated libp2p WSS/Noise/Yamux connection, checks the remote peer ID, runs identify, and measures a standard libp2p ping. See [Browser client](docs/browser-client.md).
 
 ## Contract
 
@@ -205,6 +223,10 @@ All publishable artifacts are released by one CI workflow:
 - a successful CI run for `main` publishes a unique `<workspace-base>-dev.<run>.<attempt>` version under npm's `next` tag and as matching crates.io prereleases;
 - publishing a GitHub Release tagged `vMAJOR.MINOR.PATCH` publishes that exact stable version under npm's `latest` tag and crates.io's normal stable channel; and
 - stable releases also attach versioned Linux, macOS, and Windows native binaries, checksums, and build attestations.
+
+The private explorer application is not a registry package. After the same
+`main` CI run succeeds, a separate workflow deploys its tested static build to
+Cloudflare Pages at [resurrect.caza.la](https://resurrect.caza.la).
 
 The release pipeline runs tests before publication and publishes dependency crates in topological order with registry propagation retries. See [Releasing](docs/releasing.md).
 

@@ -16,6 +16,7 @@ dist/
 coverage/
 artifacts/
 *.tsbuildinfo
+/resurrect-peers.sqlite3*
 
 # Local configuration and secrets
 .env

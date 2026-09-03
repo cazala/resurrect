@@ -5,6 +5,10 @@
   "scripts": {
     "build": "pnpm --recursive build",
     "check": "pnpm --recursive check",
+    "dev:explorer": "pnpm --dir apps/explorer dev",
     "test": "pnpm --recursive test"
+  },
+  "devDependencies": {
+    "wrangler": "4.128.0"
   }
 }
