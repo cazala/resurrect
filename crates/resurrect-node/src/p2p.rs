@@ -73,7 +73,7 @@ impl Libp2pHost {
     /// # Errors
     ///
     /// Returns an error if behaviour construction or every listener fails.
-    pub fn start(
+    pub async fn start(
         keypair: libp2p::identity::Keypair,
         config: HostConfig,
     ) -> Result<Self, HostError> {
@@ -93,6 +93,9 @@ impl Libp2pHost {
             )
             .map_err(|error| HostError::Build(error.to_string()))?
             .with_dns()
+            .map_err(|error| HostError::Build(error.to_string()))?
+            .with_websocket(noise::Config::new, yamux::Config::default)
+            .await
             .map_err(|error| HostError::Build(error.to_string()))?
             .with_behaviour(move |key| {
                 let mdns = if mdns_enabled {
@@ -122,7 +125,7 @@ impl Libp2pHost {
         for address in config.listen_addresses {
             match swarm.listen_on(address) {
                 Ok(_) => listening += 1,
-                Err(error) => tracing::warn!(%error, "libp2p listener rejected"),
+                Err(error) => tracing::warn!(error = ?error, "libp2p listener rejected"),
             }
         }
         if listening == 0 {
@@ -577,7 +580,7 @@ mod tests {
     async fn two_hosts_complete_authenticated_dial() {
         let key_a = Keypair::generate_ed25519();
         let peer_a = key_a.public().to_peer_id();
-        let mut host_a = Libp2pHost::start(key_a, local_config()).unwrap();
+        let mut host_a = Libp2pHost::start(key_a, local_config()).await.unwrap();
         let status_a = host_a
             .handle
             .wait_for_listener(Duration::from_secs(5))
@@ -585,7 +588,7 @@ mod tests {
             .unwrap();
 
         let key_b = Keypair::generate_ed25519();
-        let mut host_b = Libp2pHost::start(key_b, local_config()).unwrap();
+        let mut host_b = Libp2pHost::start(key_b, local_config()).await.unwrap();
         host_b
             .handle
             .wait_for_listener(Duration::from_secs(5))
@@ -618,10 +621,59 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn two_hosts_complete_authenticated_websocket_dial() {
+        let key_a = Keypair::generate_ed25519();
+        let peer_a = key_a.public().to_peer_id();
+        let mut config_a = local_config();
+        config_a.listen_addresses = vec!["/ip4/127.0.0.1/tcp/0/ws".parse().unwrap()];
+        let mut host_a = Libp2pHost::start(key_a, config_a).await.unwrap();
+        let status_a = host_a
+            .handle
+            .wait_for_listener(Duration::from_secs(5))
+            .await
+            .unwrap();
+
+        let key_b = Keypair::generate_ed25519();
+        let mut host_b = Libp2pHost::start(key_b, local_config()).await.unwrap();
+        host_b
+            .handle
+            .wait_for_listener(Duration::from_secs(5))
+            .await
+            .unwrap();
+
+        let candidate = PeerCandidate {
+            record_type: RECORD_TYPE_LIBP2P,
+            peer_id: peer_a.to_bytes(),
+            sequence: 1,
+            endpoints: vec![Endpoint {
+                address: status_a.listen_addresses[0].clone(),
+            }],
+            raw_signed_record: vec![1],
+            expires_at: u64::MAX,
+            source: DiscoverySourceKind::ResurrectRegistry,
+            announcement_block: None,
+            announcement_log_index: None,
+        };
+        assert!(
+            host_b
+                .handle
+                .connect(candidate, Duration::from_secs(5))
+                .await
+        );
+        assert_eq!(
+            host_b.handle.status().connected_peers,
+            vec![peer_a.to_string()]
+        );
+
+        host_b.shutdown().await;
+        host_a.shutdown().await;
+    }
+
+    #[tokio::test]
     async fn configured_peer_is_a_native_candidate() {
         let key_a = Keypair::generate_ed25519();
         let peer_a = key_a.public().to_peer_id();
-        let mut host_a = Libp2pHost::start(key_a, local_config()).unwrap();
+        let mut host_a = Libp2pHost::start(key_a, local_config()).await.unwrap();
         let status_a = host_a
             .handle
             .wait_for_listener(Duration::from_secs(5))
@@ -636,7 +688,7 @@ mod tests {
                 .with(Protocol::P2p(peer_a)),
         );
         let key_b = Keypair::generate_ed25519();
-        let mut host_b = Libp2pHost::start(key_b, config_b).unwrap();
+        let mut host_b = Libp2pHost::start(key_b, config_b).await.unwrap();
         host_b
             .handle
             .wait_for_listener(Duration::from_secs(5))

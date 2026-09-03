@@ -17,6 +17,9 @@ This map connects every item in section 29 of the specification to implementatio
 | Browser custom JSON-RPC and injected provider without accounts | `jsonRpcProvider` and `injectedProvider` | full scan tests assert no `eth_requestAccounts` |
 | Chain verification and provider switching | descriptor/provider checks and `setProvider` | wrong-chain and failed-provider replacement tests |
 | Browser dial-context rules | secure signed multiaddr policy | shared browser/native-only vectors and filtering tests |
+| Browser completes authenticated WebSocket dial | Rust WebSocket transport and explorer libp2p host | Rust transport test plus cross-runtime explorer interoperability suite |
+| Browser verifies recovered peer identity | Noise remote identity and signed-record peer ID comparison | mismatch unit tests plus live Rust-to-JavaScript assertion |
+| Browser completes identify and ping | standard libp2p services in the explorer | cross-runtime identify and ping result assertions |
 | Unrelated operators reboot after shutdown | no owner plus independent peer/payer identities | all A/B/C stop; D/E reboot; identities differ |
 | No owner, DNS, hosted API, or original operator | minimal contract and caller-owned configuration | selector proof; loopback IP multiaddrs; fresh arbitrary keys |
 
@@ -31,6 +34,6 @@ Additional required-test evidence from section 24:
 | simultaneous reboot | live F/G scenario under a fresh namespace |
 | dead records and continuing discovery | stale A/B records precede unrelated D/E live records; bounded connector tests |
 | spam/candidate cap | core candidate-store and scanner cap tests |
-| browser provider/privacy/endpoints | TypeScript provider, scanner, and record suites |
+| browser provider/privacy/endpoints | TypeScript provider, scanner, record, explorer, and Rust-interoperability suites |
 
 The output artifact contains one boolean for every checklist claim plus the temporary registry address. A false claim or missing artifact fails CI. This is reference-implementation evidence, not a third-party audit or proof about an external deployment.

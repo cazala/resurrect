@@ -24,4 +24,13 @@ describe('registry provider privacy', () => {
     persistJsonRpcUrl('https://rpc.example/private-token', storage)
     expect(storage.setItem).toHaveBeenCalledOnce()
   })
+
+  it('preserves JSON-RPC range errors returned with an HTTP error status', async () => {
+    const fetcher = vi.fn(async () => new Response(
+      JSON.stringify({ jsonrpc: '2.0', id: 1, error: { code: -32602, message: 'block range is too wide' } }),
+      { status: 400 }
+    ))
+    const provider = jsonRpcProvider('https://rpc.example', { fetch: fetcher })
+    await expect(provider.request('eth_getLogs')).rejects.toThrow('JSON-RPC -32602: block range is too wide')
+  })
 })

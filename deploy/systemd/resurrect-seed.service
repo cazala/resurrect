@@ -1,0 +1,60 @@
+[Unit]
+Description=Resurrect Ethereum mainnet seed
+Documentation=https://github.com/cazala/resurrect/blob/main/docs/hosted-services.md
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=resurrect
+Group=resurrect
+EnvironmentFile=/etc/resurrect/seed.env
+Environment=RUST_LOG=info
+ExecStart=/usr/local/bin/resurrect-node \
+  --namespace 0x0c07fdd466a110bea1916247b73191c331123bbc77b010462676a10d1c3928e2 \
+  --identity /var/lib/resurrect/identity.key \
+  --cache /var/lib/resurrect/peers.sqlite3 \
+  --listen /ip4/0.0.0.0/tcp/4001 \
+  --listen /ip4/127.0.0.1/tcp/4002/ws \
+  --advertise /dns4/resurrect-seed.caza.la/tcp/4001 \
+  --advertise /dns4/resurrect-ws.caza.la/tcp/443/wss \
+  --seed \
+  --mdns false \
+  --minimum-peers 1 \
+  --reboot-ttl-seconds 2592000 \
+  --maintenance-ttl-seconds 2592000 \
+  --renewal-interval-seconds 1209600 \
+  --status-file /run/resurrect/status.json \
+  --log-format json
+Restart=on-failure
+RestartSec=10s
+TimeoutStopSec=30s
+UMask=0077
+StateDirectory=resurrect
+StateDirectoryMode=0750
+RuntimeDirectory=resurrect
+RuntimeDirectoryMode=0750
+ConfigurationDirectory=resurrect
+ConfigurationDirectoryMode=0750
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectClock=true
+ProtectControlGroups=true
+ProtectHome=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectSystem=strict
+# libp2p's wildcard TCP listener watches interface changes through rtnetlink.
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

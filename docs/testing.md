@@ -42,6 +42,22 @@ pnpm --filter @resurrect-protocol/client test
 
 Tests cover strict descriptors, namespace parity, custom JSON-RPC, injected EIP-1193 reads without account requests, explicit-only URL persistence, wrong-chain rejection, provider replacement, constant verification, adaptive log ranges, duplicate/expiry filtering, candidate bounds, secure browser endpoints, private/native-only rejection, and signed-envelope tampering.
 
+The private explorer application adds model and endpoint tests plus a real
+cross-runtime transport suite:
+
+```bash
+pnpm --filter @resurrect-protocol/explorer check
+pnpm --filter @resurrect-protocol/explorer build
+pnpm --filter @resurrect-protocol/explorer test
+RESURRECT_NODE_BIN=target/debug/resurrect-node \
+  pnpm --filter @resurrect-protocol/explorer test -- rust-interop.test.ts
+```
+
+The interoperability test starts the Rust node on a WebSocket listener, creates
+a browser-shaped JavaScript libp2p client, performs Noise/Yamux negotiation,
+verifies the expected remote peer ID, runs identify, and receives a ping. It
+does not require Cloudflare, DNS, Ethereum, or a public network.
+
 CI runs the package on Node.js 22 and 24.
 
 ## Cross-language vectors
@@ -68,7 +84,9 @@ The script runs prerequisite suites, deploys the exact registry to a fresh Anvil
 2. B has no cache, native discovery, DNS seed, or knowledge of A; it scans Resurrect and completes an authenticated Noise connection to A.
 3. A/B restart; C starts with an authenticated configured libp2p peer and an unreachable RPC, then joins natively with zero registry scan attempts. This is deterministic on CI runners where multicast interfaces are absent or unroutable.
 4. All processes stop; unrelated D/E identities and payer accounts reboot despite stale unreachable records.
-5. F/G start simultaneously under a fresh namespace, both announce, and a connection forms.
+5. A Rust WebSocket listener and JavaScript client complete authenticated peer
+   verification, identify, and ping.
+6. F/G start simultaneously under a fresh namespace, both announce, and a connection forms.
 
 The test uses private endpoints only under an explicit local-test flag. It has bounded waits and captures per-node logs/status on failure. CI uploads `artifacts/implementer-checklist.json` even when the job fails.
 
@@ -88,9 +106,15 @@ This compares canonical contract sources and deployment manifests, validates the
 |---|---|
 | `rust` | formatting, strict lint, unit/integration tests, docs |
 | `contracts` | formatting, high-run fuzz/invariant tests, sizes, source parity |
-| `browser` | two supported Node versions, types, build, tests |
+| `browser` | two supported Node versions, client/explorer types, build, unit tests |
 | `packages` | every publishable archive can be constructed |
 | `fork` | optional real-state suite |
 | `implementer-checklist` | real EVM and multi-process conformance |
+
+Production Pages deployment is intentionally outside pull-request CI. After a
+push-triggered `main` CI run succeeds, `deploy-explorer.yml` repeats the explorer
+checks and deploys the exact tested commit. The live post-deployment check must
+scan the registry and complete the authenticated browser ping; a static HTTP
+200 alone is insufficient.
 
 A green unit suite alone is not release evidence. The stable release workflow reruns Rust, Foundry, and npm tests before publication.

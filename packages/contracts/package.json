@@ -1,6 +1,6 @@
 {
   "name": "@resurrect-protocol/contracts",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Canonical immutable Solidity registry source and ABI for Resurrect v1",
   "license": "CC0-1.0",
   "repository": {

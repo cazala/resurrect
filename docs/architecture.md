@@ -74,6 +74,26 @@ Codec 1 accepts raw EIP-778 RLP ENRs and enforces the ENR size/signature rules. 
 
 Endpoint policy is environment-specific. The native default rejects loopback, private, unspecified, multicast, documentation, and unsupported endpoints. Test/private overlays must opt in. The browser package accepts authenticated secure WebTransport, WSS, HTTPS, or TLS+WebSocket multiaddrs and rejects private IP literals by default.
 
+## Browser-to-seed path
+
+The reference node can listen on native TCP and plain WebSocket at the same
+time. In the hosted deployment, native TCP is exposed directly while the
+WebSocket listener is bound to loopback behind a TLS edge:
+
+```text
+browser explorer
+   ├─ JSON-RPC read ───────────────► caller-selected Ethereum provider
+   └─ WSS ─► Cloudflare TLS/tunnel ─► node /ws listener
+                │                         │
+                └── transport privacy    └── Noise peer authentication,
+                                             Yamux, identify, ping
+```
+
+The TLS edge cannot impersonate the announced libp2p peer without its identity
+key because the browser compares the Noise-authenticated peer ID with the
+signed registry record. It can still deny, delay, or observe traffic. Neither
+the tunnel nor the hosted explorer is required by the protocol.
+
 ## Persistent and ephemeral state
 
 The contract stores no mutable state. Local SQLite rows are a disposable performance cache and contain the raw signed record plus observation metadata. Every row is cryptographically decoded and checked for expiry again on load. A corrupt, stale, or attacker-modified cache therefore cannot bypass record validation.

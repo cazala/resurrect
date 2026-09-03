@@ -1,6 +1,6 @@
 {
   "name": "@resurrect-protocol/client",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Browser and static-client implementation of Resurrect v1",
   "type": "module",
   "license": "MIT OR Apache-2.0",
@@ -29,13 +29,13 @@
     "test:unit": "vitest run"
   },
   "dependencies": {
-    "@libp2p/peer-id": "6.0.14",
-    "@libp2p/peer-record": "9.0.15",
+    "@libp2p/peer-id": "6.0.15",
+    "@libp2p/peer-record": "9.0.16",
     "@multiformats/multiaddr": "13.0.3",
     "viem": "2.55.16"
   },
   "devDependencies": {
-    "@libp2p/crypto": "5.1.22",
+    "@libp2p/crypto": "5.1.23",
     "typescript": "7.0.2",
     "vitest": "4.1.10"
   },

@@ -20,13 +20,20 @@ export function jsonRpcProvider(url: string, options: JsonRpcHttpOptions = {}): 
         headers: { 'content-type': 'application/json', ...options.headers },
         body: JSON.stringify({ jsonrpc: '2.0', id: ++id, method, params })
       })
+      const payload = await response.json().catch(() => undefined) as RpcResponse | undefined
+      if (payload?.error != null) {
+        throw new Error(`JSON-RPC ${payload.error.code}: ${payload.error.message}`)
+      }
       if (!response.ok) throw new Error(`JSON-RPC HTTP error ${response.status}`)
-      const payload = (await response.json()) as { result?: unknown; error?: { code: number; message: string } }
-      if (payload.error != null) throw new Error(`JSON-RPC ${payload.error.code}: ${payload.error.message}`)
-      if (!('result' in payload)) throw new Error('JSON-RPC response has no result')
+      if (payload == null || !('result' in payload)) throw new Error('JSON-RPC response has no result')
       return payload.result
     }
   }
+}
+
+interface RpcResponse {
+  result?: unknown
+  error?: { code: number; message: string }
 }
 
 export function injectedProvider(provider: Eip1193Provider): RegistryProvider {

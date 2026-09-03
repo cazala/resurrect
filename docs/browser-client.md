@@ -47,6 +47,39 @@ The package accepts only secure browser-capable signed multiaddrs containing Web
 
 The scanner does not create a browser libp2p node or perform an application request. The application profile must translate returned endpoints into its chosen browser transport and must authenticate the expected peer plus application protocol after dialing.
 
+## Reference explorer and live probe
+
+The static reference application in `apps/explorer` is deployed at
+[resurrect.caza.la](https://resurrect.caza.la). It uses the canonical Ethereum
+deployment and the repository's demonstration namespace. The default public RPC
+is `https://eth.drpc.org`; users can replace it in memory or select an injected
+wallet provider. Selecting a wallet does not connect an account, request a
+signature, or submit a transaction.
+
+After a scan, the explorer reports four distinct values:
+
+- matching registry announcements processed in the bounded scan;
+- deduplicated, unexpired browser-compatible candidates;
+- rejected or native-only records; and
+- the confirmed head and scanned block window.
+
+None is an authoritative network-size metric. Registry events persist after a
+peer becomes unreachable, one peer may announce repeatedly, and participants
+that joined through native discovery need not announce at all.
+
+For each candidate, the explorer can create an ephemeral browser libp2p node,
+dial the signed WSS endpoint, negotiate Noise and Yamux, compare the
+authenticated remote peer ID with the signed record, run identify, and issue a
+standard libp2p ping. It displays connection time, ping round-trip time, remote
+agent/protocol versions, and supported protocols. Closing or navigating away
+from the page stops the ephemeral node. A successful ping proves current
+transport reachability and control of that libp2p identity; it does not prove
+application membership, honest behavior, data availability, or authorization.
+
+The reference WSS endpoint is
+`/dns4/resurrect-ws.caza.la/tcp/443/wss`. TLS terminates at Cloudflare Tunnel;
+Noise remains the end-to-end peer authentication layer.
+
 ## Resource options
 
 `scan` accepts confirmations, initial/minimum chunk width, maximum raw logs, maximum retained candidates, maximum endpoints per signed record, and a private-endpoint opt-in. Counts must be positive safe integers and block quantities must be non-negative. Defaults follow the v1 resource recommendations.

@@ -8,6 +8,12 @@ Every artifact that can be independently consumed is published:
 - npm: `@resurrect-protocol/contracts`, `@resurrect-protocol/client`; and
 - GitHub Release: `resurrect-node` binaries for Linux, macOS, and Windows, SHA-256 checksums, and attestations.
 
+The explorer is a private workspace application rather than a reusable package.
+Its production build is still published automatically: after a successful
+push-triggered CI run for `main`, `deploy-explorer.yml` uploads the exact tested
+commit to Cloudflare Pages project `resurrect`, served at
+[resurrect.caza.la](https://resurrect.caza.la).
+
 The canonical Solidity source, ABI, and machine-readable reference Ethereum deployment manifest are distributed by npm rather than a separate contract binary channel. Rust and TypeScript packages expose the same address/block as typed constants and constructors; packaging tests fail if those values drift.
 
 ## Development releases from main
@@ -41,6 +47,16 @@ The workflow has `id-token: write` and requests npm provenance. With trusted pub
 
 Optional `MAINNET_RPC_URL` enables the real-state fork suite, including live verification of the published Ethereum mainnet contract. It is not required for local EVM, unit, integration, packaging, or release tests; without it the live assertions return early.
 
+The explorer deployment additionally uses an `explorer-production` GitHub
+Environment (or repository secrets) containing:
+
+- `CLOUDFLARE_ACCOUNT_ID`; and
+- `CLOUDFLARE_API_TOKEN`, restricted to Pages edit permission.
+
+Those credentials deploy static assets only. The workflow does not administer
+DNS or Tunnel configuration and never receives the seed identity, Ethereum
+payer key, RPC URL, or Cloudflare connector token.
+
 GitHub's built-in token supplies release upload and attestation permissions. The asset job passes `GITHUB_REPOSITORY` to `gh release upload` explicitly because it intentionally does not check out source or rely on local Git metadata. No contract deployer key, production RPC URL, libp2p identity, hosted API key, DNS credential, or Ethereum announcement key is needed by CI.
 
 Every third-party GitHub Action is pinned to a verified commit SHA. Update those pins deliberately after reviewing upstream release notes and resolving the corresponding signed major-version tag.
@@ -60,7 +76,10 @@ scripts/check-packages.sh
 scripts/checklist-integration.sh
 ```
 
-Review packed archives and confirm the contract source mirror is exact. Confirm the base workspace version represents the next intended development line before merging version changes.
+Review packed archives and confirm the contract source mirror is exact. Confirm
+the explorer build contains no secret or provider credential. Confirm the base
+workspace version represents the next intended development line before merging
+version changes.
 
 ## Versioning mechanics
 

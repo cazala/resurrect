@@ -48,6 +48,15 @@ The native identity key authenticates the peer record and transport. Protect it 
 
 Dialing registry-derived addresses is an outbound request to attacker-controlled input. Production endpoint policy rejects local and private address literals, but DNS names can resolve differently over time or be rebound. Applications with sensitive internal networks should resolve and filter all addresses at dial time, enforce egress controls outside the process, and account for proxies and IPv4-mapped IPv6.
 
+## WebSocket TLS edges
+
+A TLS-terminating WSS proxy or tunnel can observe timing and addresses, deny
+connections, and present its own Web PKI identity. It must not replace libp2p
+authentication. Browser clients must complete Noise and compare the remote peer
+ID with the signed record before treating the connection as the announced peer.
+Keep plain `/ws` origins loopback-only, restrict connector tokens to their
+dedicated tunnel, and never place identity or payer keys at the edge.
+
 ## Supply-chain and release security
 
 CI builds locked Rust and pnpm dependency graphs, packages every public artifact, and runs conformance tests. Stable native binaries receive checksums and GitHub attestations. Consumers should verify repository/tag provenance, package publisher provenance, checksums, and their own dependency policy. A passing suite is not a substitute for an independent security audit.

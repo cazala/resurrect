@@ -8,6 +8,7 @@ The normative protocol is [spec.md](spec.md). Other documents explain this repos
 | [Application integration](application-integration.md) | protocol developers | descriptor/profile decisions and Rust integration |
 | [Node operations](node-operations.md) | seed operators | keys, endpoints, configuration, lifecycle, recovery |
 | [Browser client](browser-client.md) | web developers | providers, privacy, scanning, dial-context rules |
+| [Hosted services](hosted-services.md) | operators and maintainers | reference seed, WSS tunnel, Pages deployment, and production checks |
 | [Security](security.md) | security reviewers and operators | threats, mitigations, residual risk |
 | [Testing](testing.md) | contributors and auditors | unit, fuzz, invariant, fork, interop, reboot suites |
 | [Conformance](conformance.md) | implementers | spec checklist-to-evidence map |

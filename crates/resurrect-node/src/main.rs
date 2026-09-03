@@ -201,7 +201,8 @@ async fn run(cli: Cli) -> Result<()> {
             enable_mdns: cli.mdns,
             ..HostConfig::default()
         },
-    )?;
+    )
+    .await?;
     let listener_status = host
         .handle
         .wait_for_listener(Duration::from_secs(10))
